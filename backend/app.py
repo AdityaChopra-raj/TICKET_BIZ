@@ -51,15 +51,29 @@ def get_resized_image(img_name):
     return img
 
 def show_event_card(event, key_prefix=""):
+    # Display image
     st.image(get_resized_image(event["image"]), use_container_width=True)
+    
+    # Availability badge below the image
     availability = "AVAILABLE" if event["available_tickets"] > 0 else "FULL"
     avail_color = "#16a34a" if event["available_tickets"] > 0 else "#ff0000"
-    st.markdown(f'<div class="availability-tag" style="background-color:{avail_color}">{availability}</div>', unsafe_allow_html=True)
+    st.markdown(f'''
+        <div class="availability-badge" style="
+            display: inline-block;
+            padding: 4px 10px;
+            border-radius: 6px;
+            background-color:{avail_color};
+            color:#fff;
+            font-weight:bold;
+            margin-bottom: 8px;
+        ">{availability}</div>
+    ''', unsafe_allow_html=True)
+    
+    # Event Title
     st.markdown(f'<div class="card-title">{event["name"]}</div>', unsafe_allow_html=True)
-    st.markdown(f'<div class="card-desc">{event["description"]}</div>', unsafe_allow_html=True)
-    st.markdown(f'<div class="card-details">📅 {event["date"]}<br>📍 {event["location"]}<br>🎟️ {event["available_tickets"]} tickets left<br>💰 From ₹{event["price"]}</div>', unsafe_allow_html=True)
-    if st.button("Select Event", key=f"{key_prefix}_{event['id']}"):
-        st.session_state.selected_event = event
+    
+    # Event Description
+    st.markdown(f'<div class="card-desc">{event["description"]}</div>', unsafe_allow_html=True
 
 # ------------------ Home Tab ------------------
 if st.session_state.mode is None:
