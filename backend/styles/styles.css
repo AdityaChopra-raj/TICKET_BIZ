@@ -3,7 +3,8 @@
     display: flex;
     overflow-x: auto;
     gap: 20px;
-    padding-bottom: 15px;
+    padding: 15px 0;
+    scroll-behavior: smooth;
 }
 
 .horizontal-scroll::-webkit-scrollbar {
@@ -19,10 +20,10 @@
     background: #222;
 }
 
-/* Event cards (Instagram-like posts) */
+/* Event cards (Instagram-style square posts) */
 .card {
-    min-width: 250px;
-    max-width: 250px;
+    min-width: 260px;
+    max-width: 260px;
     background: linear-gradient(180deg, #1c1c1c 0%, #111 100%);
     border-radius: 12px;
     padding: 10px;
@@ -32,26 +33,38 @@
     flex-shrink: 0;
 }
 
-/* Image inside card */
+/* Image inside card: square like Instagram */
 .card img {
     width: 100%;
-    aspect-ratio: 1 / 1;  /* square like Instagram post */
+    aspect-ratio: 1 / 1;
     object-fit: cover;
     border-radius: 10px;
 }
 
-/* Card hover effect */
+/* Hover effect */
 .card:hover {
-    transform: scale(1.03);
+    transform: scale(1.05);
     box-shadow: 0 12px 30px rgba(0,0,0,0.9);
 }
 
-/* Card text */
+/* Card title & description */
+.card h3 {
+    text-align: center;
+    color: #e50914;
+    margin-top: 10px;
+    font-size: 18px;
+}
+
 .card p {
     text-align: left;
     color: #ddd;
     font-size: 14px;
+    margin: 5px 0;
 }
-.card h3 {
-    text-align: center;
+
+.card .price {
+    text-align: left;
+    color: #fff;
+    font-weight: bold;
+    margin-top: 5px;
 }
