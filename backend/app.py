@@ -1,128 +1,206 @@
 import streamlit as st
-from events_data import events as EVENTS_DATA
 from PIL import Image
-import json
-import os
+import os, uuid, io, csv, smtplib
+from email.message import EmailMessage
+from datetime import datetime
+from events_data import EVENTS
+from ledger import add_block, read_ledger, init_ledger
+from pathlib import Path
+import qrcode
 
-# Optional blockchain imports
-from blockchain import (
-    init_web3,
-    make_ticket_hash,
-    load_contract,
-    store_hash_on_chain
-)
+st.set_page_config(page_title="TicketBiz Clone", layout="wide")
+BASE_DIR = Path(__file__).parent
+ASSETS_DIR = BASE_DIR / "assets"
+TICKETS_CSV = BASE_DIR / "tickets.csv"
 
-# ---------------- Page Config ---------------- #
-st.set_page_config(page_title="🎟 Event Ticketing", layout="wide")
-st.title("🎬 Blockchain-Backed Event Ticketing System")
+init_ledger()
 
-st.markdown(
-    """
-    **Welcome!**  
-    Verify your ticket for any of our events below.  
-    If enabled, a cryptographic hash of your ticket will also be written to the blockchain.
-    """,
-    unsafe_allow_html=True
-)
-
-# -------------- Sidebar & Blockchain Setup -------------- #
-use_blockchain = st.sidebar.checkbox("Enable blockchain logging", value=False)
-
-w3 = None
-contract = None
-blockchain_ready = False
-
-if use_blockchain:
+# CSS
+def local_css(file_name):
     try:
-        RPC_URL = st.secrets["RPC_URL"]
-        PRIVATE_KEY = st.secrets["PRIVATE_KEY"]
-        ACCOUNT_ADDRESS = st.secrets["ACCOUNT_ADDRESS"]
-        CHAIN_ID = int(st.secrets["CHAIN_ID"])
-        CONTRACT_ADDRESS = st.secrets["CONTRACT_ADDRESS"]
-        CONTRACT_ABI = json.loads(st.secrets["CONTRACT_ABI_JSON"])
+        with open(file_name) as f:
+            st.markdown(f"<style>{f.read()}</style>", unsafe_allow_html=True)
+    except Exception:
+        pass
+local_css("styles/style.css")
 
-        w3 = init_web3(RPC_URL)
-        contract = load_contract(w3, CONTRACT_ADDRESS, CONTRACT_ABI)
-        blockchain_ready = True
-        st.sidebar.success("Blockchain connection ready ✅")
+# Helpers
+def generate_uid():
+    return uuid.uuid4().hex[:10].upper()
+
+def generate_qr_image(data_str):
+    qr = qrcode.QRCode(box_size=6, border=2)
+    qr.add_data(data_str)
+    qr.make(fit=True)
+    img = qr.make_image(fill_color="black", back_color="white")
+    buf = io.BytesIO()
+    img.save(buf, format="PNG")
+    buf.seek(0)
+    return buf
+
+def send_ticket_email(to_email, first_name, last_name, uid, event_name, qr_bytes_io):
+    try:
+        email_conf = st.secrets.get("email", None)
+        if not email_conf:
+            raise RuntimeError("Email credentials not configured in st.secrets")
+
+        msg = EmailMessage()
+        msg["Subject"] = f"Your ticket for {event_name}"
+        msg["From"] = email_conf["address"]
+        msg["To"] = to_email
+        msg.set_content(f"Hi {first_name} {last_name},\\n\\nHere is your ticket UID: {uid}\\nEvent: {event_name}\\n\\nShow this QR at check-in.\\n\\n— TicketBiz Clone")
+
+        qr_bytes = qr_bytes_io.getvalue()
+        msg.add_attachment(qr_bytes, maintype="image", subtype="png", filename=f"{uid}.png")
+
+        s = smtplib.SMTP_SSL(email_conf.get("smtp_host","smtp.gmail.com"), int(email_conf.get("smtp_port",465)))
+        s.login(email_conf["address"], email_conf["password"])
+        s.send_message(msg)
+        s.quit()
+        return True, None
     except Exception as e:
-        st.sidebar.error(f"Blockchain initialisation failed: {e}")
-        use_blockchain = False
+        return False, str(e)
 
-# -------------- Event Selection -------------- #
-event_names = [event["name"] for event in EVENTS_DATA]
-selected_event_name = st.selectbox("Select Event", event_names)
+def save_ticket_record(uid, first, last, email, event_name):
+    header = ["uid","first_name","last_name","email","event","purchased_at","checked_in"]
+    exists = TICKETS_CSV.exists()
+    with open(TICKETS_CSV, "a", newline="", encoding="utf-8") as f:
+        writer = csv.writer(f)
+        if not exists:
+            writer.writerow(header)
+        writer.writerow([uid, first, last, email, event_name, datetime.utcnow().isoformat(), ""])
+    return
 
-selected_event = next(e for e in EVENTS_DATA if e["name"] == selected_event_name)
+def mark_checked_in(uid):
+    rows = []
+    if not TICKETS_CSV.exists():
+        return False
+    with open(TICKETS_CSV, "r", newline="", encoding="utf-8") as f:
+        reader = csv.DictReader(f)
+        for r in reader:
+            if r["uid"] == uid:
+                r["checked_in"] = datetime.utcnow().isoformat()
+            rows.append(r)
+    with open(TICKETS_CSV, "w", newline="", encoding="utf-8") as f:
+        writer = csv.DictWriter(f, fieldnames=["uid","first_name","last_name","email","event","purchased_at","checked_in"])
+        writer.writeheader()
+        writer.writerows(rows)
+    return True
 
-# Display event banner
-try:
-    event_image = Image.open(selected_event["image"])
-    st.image(event_image, use_container_width=True)  # 16:9 images recommended
-except Exception as e:
-    st.warning(f"Image not found for {selected_event_name}: {e}")
+# Session state
+if "buy_event" not in st.session_state:
+    st.session_state["buy_event"] = None
+if "show_checkin" not in st.session_state:
+    st.session_state["show_checkin"] = False
+if "show_ledger" not in st.session_state:
+    st.session_state["show_ledger"] = False
 
-# Display stats
-total_tickets = len(selected_event["tickets"])
-scanned_count = len(selected_event["scanned_tickets"])
-remaining = total_tickets - scanned_count
+# Title
+st.title("🎟 TicketBiz Clone — Single Page App")
+st.markdown("Browse events, buy tickets, check-in, and see blockchain ledger.")
 
-st.markdown(
-    f"""
-    **Stats**  
-    * Total tickets: `{total_tickets}`  
-    * Tickets already scanned: `{scanned_count}`  
-    * Tickets remaining: `{remaining}`
-    """
-)
+# Event browsing
+st.header("🎬 Events")
+cols = st.columns(3)
+for idx, ev in enumerate(EVENTS):
+    col = cols[idx % 3]
+    with col:
+        st.markdown(f'<div class="card"><h3>{ev["name"]}</h3></div>', unsafe_allow_html=True)
+        img_path = ASSETS_DIR / ev.get("image","placeholder.jpeg")
+        try: img = Image.open(img_path)
+        except: img = Image.open(ASSETS_DIR / "placeholder.jpeg")
+        st.image(img, use_column_width=True)
+        st.write(ev.get("desc",""))
+        st.write(f"Price: ₹{ev.get('price',100)}")
+        if st.button(f"Buy — {ev['name']}", key=f"buy_{idx}"):
+            st.session_state["buy_event"] = ev["name"]
+            st.session_state["buy_index"] = idx
 
-# -------------- Ticket Verification -------------- #
-ticket_number = st.text_input("Enter Ticket Number to verify")
-
-if st.button("Verify Ticket"):
-    if not ticket_number.strip():
-        st.error("Please enter a ticket number.")
-    else:
-        ticket_number = ticket_number.strip().upper()
-        if ticket_number in selected_event["tickets"]:
-            if ticket_number in selected_event["scanned_tickets"]:
-                st.warning("⚠️ Ticket already scanned.")
+# Buy form
+if st.session_state["buy_event"]:
+    ev_name = st.session_state["buy_event"]
+    st.markdown("---")
+    st.header(f"Buy Ticket — {ev_name}")
+    col1, col2 = st.columns(2)
+    with col1:
+        first = st.text_input("First Name", key="first")
+        last = st.text_input("Last Name", key="last")
+        email = st.text_input("Email", key="email")
+    with col2:
+        st.write("Payment simulated for demo.")
+        name_on_card = st.text_input("Name on card (demo)", key="cardname")
+        if st.button("Confirm Purchase"):
+            if not (first and last and email):
+                st.error("Enter first name, last name, and email")
             else:
-                # Mark ticket as scanned
-                selected_event["scanned_tickets"].append(ticket_number)
-                st.success("✅ Ticket verified successfully!")
+                uid = generate_uid()
+                save_ticket_record(uid, first, last, email, ev_name)
+                add_block(uid, first, last, "buy")
+                qr_buf = generate_qr_image(f"{uid}|{ev_name}")
+                ok, err = send_ticket_email(email, first, last, uid, ev_name, qr_buf)
+                if ok: st.success(f"Ticket purchased! UID: {uid}. Email sent to {email}")
+                else: st.warning(f"Ticket purchased (email failed): {err}")
+                st.image(qr_buf)
+                st.session_state["show_checkin"] = True
+                st.session_state["show_ledger"] = True
 
-                # Optional: store hash on blockchain
-                if use_blockchain and blockchain_ready:
-                    try:
-                        ticket_hash = make_ticket_hash(ticket_number, selected_event_name)
-                        tx_hash = store_hash_on_chain(
-                            w3,
-                            contract,
-                            ACCOUNT_ADDRESS,
-                            PRIVATE_KEY,
-                            ticket_hash,
-                            CHAIN_ID
-                        )
-                        st.info(f"Ticket hash stored on chain.\n\n**Tx hash:** {tx_hash}")
-                    except Exception as e:
-                        st.error(f"Blockchain transaction failed: {e}")
+# Check-in
+if st.session_state["show_checkin"]:
+    st.markdown("---")
+    st.header("✅ Check-in / Verify Ticket")
+    uid_input = st.text_input("Enter ticket UID or scan QR", key="check_uid")
+    if st.button("Check In"):
+        if not uid_input:
+            st.error("Enter a UID")
         else:
-            st.error("❌ Invalid ticket number.")
+            found = False
+            if TICKETS_CSV.exists():
+                with open(TICKETS_CSV,"r",newline="",encoding="utf-8") as f:
+                    reader = csv.DictReader(f)
+                    for r in reader:
+                        if r["uid"] == uid_input:
+                            found = True
+                            if r.get("checked_in"):
+                                st.warning("Ticket already checked in.")
+                            else:
+                                mark_checked_in(uid_input)
+                                add_block(uid_input, r["first_name"], r["last_name"], "check-in")
+                                ok, err = send_ticket_email(r["email"], r["first_name"], r["last_name"], uid_input, r["event"], generate_qr_image(f"{uid_input}|{r['event']}"))
+                                if ok: st.success("Check-in successful, confirmation email sent.")
+                                else: st.success("Check-in successful, email failed")
+                            break
+            if not found:
+                st.error("Ticket UID not found.")
 
-# -------------- Email Notice -------------- #
-st.markdown("---")
-try:
-    EMAIL_ADDRESS = st.secrets["email"]["address"]
-    st.info(f"Email features enabled. Tickets can be sent from {EMAIL_ADDRESS}")
-except Exception:
-    st.warning("Email credentials not found. Email features are disabled.")
+# Ledger
+if st.session_state["show_ledger"]:
+    st.markdown("---")
+    st.header("🔗 Blockchain Ledger (Admin)")
+    ledger_rows = read_ledger()
+    if not ledger_rows:
+        st.info("Ledger empty")
+    else:
+        for row in ledger_rows[-20:]:
+            block_html = f"""
+            <div style="
+                background: linear-gradient(180deg, #111 0%, #151515 100%);
+                border-radius:10px;
+                padding:10px;
+                margin-bottom:10px;
+                box-shadow:0 8px 20px rgba(0,0,0,0.6);
+                color:#eee;
+            ">
+            <h4 style="color:#e50914">Block {row['index']}</h4>
+            <p><b>Timestamp:</b> {row['timestamp']}</p>
+            <p><b>UID:</b> {row['uid']}</p>
+            <p><b>Name:</b> {row['first_name']} {row['last_name']}</p>
+            <p><b>Action:</b> {row['action']}</p>
+            <p style="color:gray"><b>Prev Hash:</b> {row['previous_hash']}</p>
+            <p style="color:#e50914"><b>Hash:</b> {row['hash']}</p>
+            </div>
+            """
+            st.markdown(block_html, unsafe_allow_html=True)
 
-# -------------- Footer -------------- #
-st.markdown(
-    """
-    <hr/>
-    <small>© 2025 Event Ticketing Blockchain Demo. All rights reserved.</small>
-    """,
-    unsafe_allow_html=True
-)
+    if st.button("Download ledger CSV"):
+        with open("ledger.csv","rb") as f:
+            st.download_button("Download ledger.csv", f, file_name="ledger.csv")
