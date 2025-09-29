@@ -12,33 +12,33 @@ st.set_page_config(page_title="Ticket_Biz", layout="wide")
 # ------------------ Session State ------------------
 if "mode" not in st.session_state:
     st.session_state.mode = None
-if "selected_event" not in st.session_state:
-    st.session_state.selected_event = None
 
 # ------------------ Load CSS ------------------
 with open(Path(__file__).parent / "styles.css") as f:
     st.markdown(f"<style>{f.read()}</style>", unsafe_allow_html=True)
 
 # ------------------ Header ------------------
-st.markdown('<h1 style="text-align:center; color:#e50914; font-size:48px;">🎟 Ticket_Biz — Event Ticketing</h1>', unsafe_allow_html=True)
-st.markdown('<p style="text-align:center; color:#ddd; font-size:18px;">Welcome! Book tickets, check in attendees, or view the blockchain ledger.</p>', unsafe_allow_html=True)
+st.markdown(
+    '<h1 style="text-align:center; color:#e50914; font-size:48px;">🎟 Ticket_Biz — Event Ticketing</h1>',
+    unsafe_allow_html=True,
+)
+st.markdown(
+    '<p style="text-align:center; color:#ddd; font-size:18px;">Welcome! Book tickets, check in attendees, or view the blockchain ledger.</p>',
+    unsafe_allow_html=True,
+)
 
 # ------------------ Tabs / Ribbon ------------------
 tabs = ["Home", "Buy Ticket", "Check-In", "Blockchain Ledger"]
 selected_tab = st.radio("", tabs, index=0, horizontal=True)
 
 if selected_tab == "Home":
-    st.session_state.mode = None
-    st.session_state.selected_event = None
+    st.session_state.mode = "home"
 elif selected_tab == "Buy Ticket":
     st.session_state.mode = "buy"
-    st.session_state.selected_event = None
 elif selected_tab == "Check-In":
     st.session_state.mode = "checkin"
-    st.session_state.selected_event = None
 elif selected_tab == "Blockchain Ledger":
     st.session_state.mode = "ledger"
-    st.session_state.selected_event = None
 
 # ------------------ Helpers ------------------
 def get_resized_image(img_name):
@@ -50,8 +50,7 @@ def get_resized_image(img_name):
     img = img.resize((320, 180), Image.LANCZOS)
     return img
 
-def show_event_card(event, key_prefix=""):
-    # Display image
+def show_event_card(event):
     st.image(get_resized_image(event["image"]), use_container_width=True)
     
     # Availability badge below the image
@@ -74,14 +73,55 @@ def show_event_card(event, key_prefix=""):
     
     # Event Description
     st.markdown(f'<div class="card-desc">{event["description"]}</div>', unsafe_allow_html=True)
+    
+    # Event Details
+    st.markdown(f'<div class="card-details">📅 {event["date"]}<br>📍 {event["location"]}<br>🎟️ {event["available_tickets"]} tickets left<br>💰 From ₹{event["price"]}</div>', unsafe_allow_html=True)
+    
+    # Inline Buy Ticket Form
+    if st.session_state.mode == "buy" and event["available_tickets"] > 0:
+        st.markdown('<hr style="border-color:#222;">', unsafe_allow_html=True)
+        first_name = st.text_input("First Name", key=f"first_{event['id']}")
+        last_name = st.text_input("Last Name", key=f"last_{event['id']}")
+        uid = st.text_input("Student ID / UID", key=f"uid_{event['id']}")
+        email = st.text_input("Email", key=f"email_{event['id']}")
+        num_tickets = st.number_input("Number of Tickets", min_value=1, max_value=min(15, event["available_tickets"]), value=1, key=f"num_{event['id']}")
+        
+        if st.button("Confirm Purchase", key=f"buy_btn_{event['id']}"):
+            if not all([first_name, last_name, uid, email]):
+                st.warning("Please fill all details.")
+            else:
+                add_transaction(event["name"], first_name, last_name, uid, num_tickets, email)
+                event["available_tickets"] -= num_tickets
+                send_email(email, f"Tickets for {event['name']}", f"You have successfully booked {num_tickets} tickets!")
+                st.success(f"Tickets purchased successfully! {event['available_tickets']} tickets remaining.")
 
+    # Inline Check-In Form
+    if st.session_state.mode == "checkin":
+        st.markdown('<hr style="border-color:#222;">', unsafe_allow_html=True)
+        check_uid = st.text_input("Enter Ticket UID", key=f"checkin_uid_{event['id']}")
+        email = st.text_input("Enter Email", key=f"checkin_email_{event['id']}")
+        num_checkin = st.number_input("Number of People Checking In", min_value=1, max_value=15, value=1, key=f"checkin_num_{event['id']}")
+        
+        if st.button("Confirm Check-In", key=f"checkin_btn_{event['id']}"):
+            ledger_records = get_ledger()
+            for record in ledger_records:
+                if record["uid"] == check_uid and record["email"] == email and record["event"] == event["name"]:
+                    if num_checkin <= record["tickets"]:
+                        st.success(f"Check-In confirmed for {num_checkin} people for {record['first_name']} {record['last_name']}!")
+                        event["check_ins"] += num_checkin
+                        event["available_tickets"] -= num_checkin
+                    else:
+                        st.warning(f"Cannot check in {num_checkin} people. Only {record['tickets']} tickets were purchased.")
+                    break
+            else:
+                st.warning("No matching ticket found!")
 
 # ------------------ Home Tab ------------------
-if st.session_state.mode is None:
+if st.session_state.mode == "home":
     st.markdown('<p style="text-align:center; color:#bbb; font-size:16px;">Choose an option from the tabs above to begin.</p>', unsafe_allow_html=True)
 
-# ------------------ Buy Ticket / Check-In Tabs ------------------
-if st.session_state.mode in ["buy", "checkin"] and st.session_state.selected_event is None:
+# ------------------ Event Cards Grid ------------------
+if st.session_state.mode in ["buy", "checkin"]:
     st.markdown('<h2 class="section-title">Trending Events</h2>', unsafe_allow_html=True)
     rows = len(EVENTS) // 3 + (1 if len(EVENTS) % 3 else 0)
     for r in range(rows):
@@ -92,50 +132,7 @@ if st.session_state.mode in ["buy", "checkin"] and st.session_state.selected_eve
                 continue
             event = EVENTS[idx]
             with cols[c]:
-                show_event_card(event, key_prefix="eventcard")
-
-# ------------------ Buy Tickets Section ------------------
-if st.session_state.mode == "buy" and st.session_state.selected_event:
-    event = st.session_state.selected_event
-    st.markdown(f'<h2 class="section-title">Buy Tickets for {event["name"]}</h2>', unsafe_allow_html=True)
-    first_name = st.text_input("First Name", key="buy_first")
-    last_name = st.text_input("Last Name", key="buy_last")
-    uid = st.text_input("Student ID / UID", key="buy_uid")
-    email = st.text_input("Email", key="buy_email")
-    num_tickets = st.number_input("Number of Tickets", min_value=1, max_value=15, value=1, key="buy_count")
-
-    if st.button("Confirm Purchase", key="buy_confirm"):
-        if not all([first_name, last_name, uid, email]):
-            st.warning("Please fill all details.")
-        elif num_tickets > event["available_tickets"]:
-            st.warning(f"Only {event['available_tickets']} tickets available.")
-        else:
-            add_transaction(event["name"], first_name, last_name, uid, num_tickets, email)
-            event["available_tickets"] -= num_tickets
-            send_email(email, f"Tickets for {event['name']}", f"You have successfully booked {num_tickets} tickets!")
-            st.success(f"Tickets purchased successfully! {event['available_tickets']} tickets remaining.")
-
-# ------------------ Check-In Section ------------------
-if st.session_state.mode == "checkin" and st.session_state.selected_event:
-    event = st.session_state.selected_event
-    st.markdown(f'<h2 class="section-title">Check-In for {event["name"]}</h2>', unsafe_allow_html=True)
-    check_uid = st.text_input("Enter Ticket UID", key="checkin_uid")
-    email = st.text_input("Enter Email", key="checkin_email")
-    num_checkin = st.number_input("Number of People Checking In", min_value=1, max_value=15, value=1, key="checkin_count")
-
-    if st.button("Confirm Check-In", key="confirm_checkin"):
-        ledger_records = get_ledger()
-        for record in ledger_records:
-            if record["uid"] == check_uid and record["email"] == email:
-                if num_checkin <= record["tickets"]:
-                    st.success(f"Check-In confirmed for {num_checkin} people for {record['first_name']} {record['last_name']}!")
-                    event["check_ins"] += num_checkin
-                    event["available_tickets"] -= num_checkin
-                else:
-                    st.warning(f"Cannot check in {num_checkin} people. Only {record['tickets']} tickets were purchased.")
-                break
-        else:
-            st.warning("No matching ticket found!")
+                show_event_card(event)
 
 # ------------------ Blockchain Ledger ------------------
 if st.session_state.mode == "ledger":
