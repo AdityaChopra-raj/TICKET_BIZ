@@ -11,7 +11,8 @@ EVENTS = [
         "location": "Community Hall, Ludhiana",
         "price": 299,
         "total_tickets": 150,
-        "image": ASSETS_DIR / "navratri.jpeg.avif",
+        "available_tickets": 150,
+        "image": "navratri.jpeg.avif",
     },
     {
         "id": "diwali",
@@ -21,7 +22,8 @@ EVENTS = [
         "location": "City Club, Ludhiana",
         "price": 399,
         "total_tickets": 200,
-        "image": ASSETS_DIR / "diwali.jpeg",
+        "available_tickets": 200,
+        "image": "diwali.jpeg",
     },
     {
         "id": "freshers",
@@ -31,7 +33,8 @@ EVENTS = [
         "location": "University Auditorium",
         "price": 199,
         "total_tickets": 120,
-        "image": ASSETS_DIR / "freshers.jpeg",
+        "available_tickets": 120,
+        "image": "freshers.jpeg",
     },
     {
         "id": "ravan",
@@ -41,7 +44,8 @@ EVENTS = [
         "location": "Main Ground",
         "price": 99,
         "total_tickets": 500,
-        "image": ASSETS_DIR / "ravan.jpeg",
+        "available_tickets": 500,
+        "image": "ravan.jpeg",
     },
     {
         "id": "club",
@@ -51,6 +55,7 @@ EVENTS = [
         "location": "Downtown Club",
         "price": 499,
         "total_tickets": 100,
-        "image": ASSETS_DIR / "club.jpeg",
+        "available_tickets": 100,
+        "image": "club.jpeg",
     },
 ]
