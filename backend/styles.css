@@ -4,8 +4,15 @@ body, .stApp {
     font-family: 'Inter', 'Roboto', 'Poppins', sans-serif;
 }
 
-/* HEADER */
-.header-title {text-align:center; font-size:30px; font-weight:bold; color:#ddd; margin-bottom:10px;}
+/* HEADER */.header-title {
+    text-align: center;
+    font-size: 42px;       /* Increased from ~30px */
+    font-weight: 800;
+    color: #e50914;        /* Netflix Red */
+    margin-bottom: 25px;
+    font-family: 'Inter', 'Poppins', 'Roboto', sans-serif;
+}
+
 .header-subtitle {text-align:center; font-size:18px; color:#bbb; margin-bottom:25px;}
 
 /* GRID LAYOUT */
