@@ -32,13 +32,11 @@ def send_ticket_email(to_email, first_name, last_name, uid, event_name):
         email_conf = st.secrets.get("email", None)
         if not email_conf:
             raise RuntimeError("Email credentials not configured in st.secrets")
-
         msg = EmailMessage()
         msg["Subject"] = f"Your ticket for {event_name}"
         msg["From"] = email_conf["address"]
         msg["To"] = to_email
-        msg.set_content(f"Hi {first_name} {last_name},\n\nHere is your ticket UID: {uid}\nEvent: {event_name}\n\nShow this UID at check-in.\n\n— TicketBiz Clone")
-
+        msg.set_content(f"Hi {first_name} {last_name},\n\nUID: {uid}\nEvent: {event_name}\n\nShow this at check-in.\n\n— TicketBiz Clone")
         s = smtplib.SMTP_SSL(email_conf.get("smtp_host","smtp.gmail.com"), int(email_conf.get("smtp_port",465)))
         s.login(email_conf["address"], email_conf["password"])
         s.send_message(msg)
@@ -112,7 +110,7 @@ for ev in EVENTS:
         img = Image.open(img_path)
     except:
         img = Image.open(ASSETS_DIR / "placeholder.jpeg")
-    st.image(img, use_container_width=True)
+    st.image(img, use_container_width=True)  # fills the card width
     st.markdown(f'<p style="text-align:left; color:#ddd;">{ev.get("desc","")}</p>', unsafe_allow_html=True)
     st.markdown(f'<p style="text-align:left; color:#ccc; font-weight:bold;">Price: ₹{ev.get("price",100)}</p>', unsafe_allow_html=True)
     if st.button(f"Buy — {ev['name']}", key=f"buy_{ev['name']}"):
