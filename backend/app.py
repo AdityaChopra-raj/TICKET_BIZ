@@ -44,18 +44,33 @@ if st.button("🎟 Buy Ticket", key="buy_button"):
 st.markdown('</div>', unsafe_allow_html=True)
 
 # Bottom row (Check-In + Blockchain)
-st.markdown('<div class="row">', unsafe_allow_html=True)
-if st.button("✅ Check-In", key="checkin_button"):
-    st.session_state.mode = "checkin"
-    st.session_state.selected_event = None
-if st.button("🔗 Blockchain", key="blockchain_button"):
-    st.session_state.mode = "blockchain"
-    st.session_state.selected_event = None
-st.markdown('</div>', unsafe_allow_html=True)
-st.markdown('</div>', unsafe_allow_html=True)
+# -------------------- Check-In Section --------------------
+if st.session_state.mode == "checkin" and st.session_state.selected_event:
+    event = st.session_state.selected_event
+    st.markdown(f'<h2 class="section-title">Check-In for {event["name"]}</h2>', unsafe_allow_html=True)
+    
+    check_uid = st.text_input("Enter Ticket UID")
+    email = st.text_input("Enter Email")
+    num_checkin = st.number_input("Number of People Checking In", min_value=1, max_value=15, value=1)
+
+    if st.button("Confirm Check-In"):
+        ledger_records = get_ledger()
+        for record in ledger_records:
+            if record["uid"] == check_uid and record["email"] == email:
+                if num_checkin <= record["tickets"]:
+                    st.success(f"Check-In confirmed for {num_checkin} people for {record['first_name']} {record['last_name']}!")
+                    # Update check-ins and available tickets
+                    event["check_ins"] += num_checkin
+                    event["available_tickets"] -= num_checkin
+                else:
+                    st.warning(f"Cannot check in {num_checkin} people. Only {record['tickets']} tickets were purchased.")
+                break
+        else:
+            st.warning("No matching ticket found!")
+
 
 # -------------------- Image Resizing --------------------
-def get_resized_image(image_path, target_width=320, target_height=180):
+def get_resized_image(image_path, target_width=200, target_height=100):
     try:
         img = Image.open(image_path)
     except:
