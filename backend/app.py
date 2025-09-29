@@ -2,7 +2,7 @@ import streamlit as st
 from pathlib import Path
 from PIL import Image
 from events_data import EVENTS, ASSETS_DIR
-from .ledger import add_transaction, get_ledger
+from ledger import add_transaction, get_ledger
 from email_utils import send_email
 from datetime import datetime
 import uuid
@@ -37,14 +37,14 @@ st.markdown(
 # -------------------- Triangular Buttons --------------------
 st.markdown('<div class="triangle-buttons">', unsafe_allow_html=True)
 
-# Top row (one button)
+# Top row (Buy Ticket)
 st.markdown('<div class="row">', unsafe_allow_html=True)
 if st.button("🎟 Buy Ticket", key="buy_button"):
     st.session_state.mode = "buy"
     st.session_state.selected_event = None
 st.markdown('</div>', unsafe_allow_html=True)
 
-# Bottom row (two buttons)
+# Bottom row (Check-In + Blockchain)
 st.markdown('<div class="row">', unsafe_allow_html=True)
 if st.button("✅ Check-In", key="checkin_button"):
     st.session_state.mode = "checkin"
@@ -53,9 +53,7 @@ if st.button("🔗 Blockchain", key="blockchain_button"):
     st.session_state.mode = "blockchain"
     st.session_state.selected_event = None
 st.markdown('</div>', unsafe_allow_html=True)
-
 st.markdown('</div>', unsafe_allow_html=True)
-
 
 # -------------------- Image Resizing --------------------
 def get_resized_image(image_path, target_width=320, target_height=180):
