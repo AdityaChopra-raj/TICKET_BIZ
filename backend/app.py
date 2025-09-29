@@ -53,12 +53,6 @@ def get_resized_image(img_name):
     return img
 
 def show_event_card(event):
-    # Clickable image to go to Buy Ticket form
-    if st.button("", key=f"img_btn_{event['id']}", help="Click to buy tickets"):
-        st.session_state.selected_event = event["id"]
-        st.session_state.mode = "buy"
-        st.experimental_rerun()
-
     # Display image
     st.image(get_resized_image(event["image"]), use_container_width=True)
 
@@ -86,6 +80,20 @@ def show_event_card(event):
     # Event Details
     st.markdown(f'<div class="card-details">📅 {event["date"]}<br>📍 {event["location"]}<br>🎟️ {event["available_tickets"]} tickets left<br>💰 From ₹{event["price"]}</div>', unsafe_allow_html=True)
 
+    # --- Buttons under the card ---
+    col1, col2 = st.columns([1,1])
+    with col1:
+        if st.button("Buy Ticket", key=f"buy_btn_{event['id']}"):
+            st.session_state.selected_event = event["id"]
+            st.session_state.mode = "buy"
+            st.experimental_rerun()
+
+    with col2:
+        if st.button("Check-In", key=f"checkin_btn_{event['id']}"):
+            st.session_state.selected_event = event["id"]
+            st.session_state.mode = "checkin"
+            st.experimental_rerun()
+
     # Inline Buy Ticket Form
     if st.session_state.mode == "buy" and st.session_state.get("selected_event") == event["id"] and event["available_tickets"] > 0:
         st.markdown('<hr style="border-color:#222;">', unsafe_allow_html=True)
@@ -95,7 +103,7 @@ def show_event_card(event):
         email = st.text_input("Email", key=f"email_{event['id']}")
         num_tickets = st.number_input("Number of Tickets", min_value=1, max_value=min(15, event["available_tickets"]), value=1, key=f"num_{event['id']}")
         
-        if st.button("Confirm Purchase", key=f"buy_btn_{event['id']}"):
+        if st.button("Confirm Purchase", key=f"confirm_buy_{event['id']}"):
             if not all([first_name, last_name, uid, email]):
                 st.warning("Please fill all details.")
             else:
@@ -111,7 +119,7 @@ def show_event_card(event):
         email = st.text_input("Enter Email", key=f"checkin_email_{event['id']}")
         num_checkin = st.number_input("Number of People Checking In", min_value=1, max_value=15, value=1, key=f"checkin_num_{event['id']}")
         
-        if st.button("Confirm Check-In", key=f"checkin_btn_{event['id']}"):
+        if st.button("Confirm Check-In", key=f"confirm_checkin_{event['id']}"):
             ledger_records = get_ledger()
             for record in ledger_records:
                 if record["uid"] == check_uid and record["email"] == email and record["event"] == event["name"]:
@@ -124,6 +132,7 @@ def show_event_card(event):
                     break
             else:
                 st.warning("No matching ticket found!")
+
 
 # ------------------ Home Tab ------------------
 if st.session_state.mode == "home":
