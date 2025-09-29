@@ -73,7 +73,8 @@ def show_event_card(event, key_prefix=""):
     st.markdown(f'<div class="card-title">{event["name"]}</div>', unsafe_allow_html=True)
     
     # Event Description
-    st.markdown(f'<div class="card-desc">{event["description"]}</div>', unsafe_allow_html=True
+    st.markdown(f'<div class="card-desc">{event["description"]}</div>', unsafe_allow_html=True)
+
 
 # ------------------ Home Tab ------------------
 if st.session_state.mode is None:
