@@ -125,13 +125,13 @@ button:hover {
     color: #e50914;
 }
 
-/* ------------------ Tabs / Radio Buttons ------------------ */
+/* ------------------ Tabs / Ribbon ------------------ */
 .stRadio > div[role="radiogroup"] {
     display: flex;
-    justify-content: center;
-    gap: 25px;
-    margin-top: 15px;
-    margin-bottom: 20px;
+    justify-content: center;   /* centers the tabs horizontally */
+    gap: 40px;                 /* space between each tab */
+    margin-top: 20px;
+    margin-bottom: 25px;
 }
 
 .stRadio input[type="radio"] {
@@ -139,12 +139,13 @@ button:hover {
 }
 
 .stRadio label {
-    padding: 10px 20px;
+    padding: 12px 25px;
     border-radius: 8px;
     cursor: pointer;
     background-color: #111418;
     color: #ddd;
     font-weight: bold;
+    font-size: 16px;
     transition: all 0.3s ease-in-out;
 }
 
