@@ -36,20 +36,17 @@ st.markdown(
 
 # -------------------- Center Buttons --------------------
 st.markdown('<div class="center-buttons">', unsafe_allow_html=True)
-col1, col2, col3 = st.columns(3)
-with col1:
-    if st.button("🎟 Buy Ticket", key="buy_button"):
-        st.session_state.mode = "buy"
-        st.session_state.selected_event = None
-with col2:
-    if st.button("✅ Check-In", key="checkin_button"):
-        st.session_state.mode = "checkin"
-        st.session_state.selected_event = None
-with col3:
-    if st.button("🔗 Blockchain", key="blockchain_button"):
-        st.session_state.mode = "blockchain"
-        st.session_state.selected_event = None
+if st.button("🎟 Buy Ticket", key="buy_button"):
+    st.session_state.mode = "buy"
+    st.session_state.selected_event = None
+if st.button("✅ Check-In", key="checkin_button"):
+    st.session_state.mode = "checkin"
+    st.session_state.selected_event = None
+if st.button("🔗 Blockchain", key="blockchain_button"):
+    st.session_state.mode = "blockchain"
+    st.session_state.selected_event = None
 st.markdown('</div>', unsafe_allow_html=True)
+
 
 # -------------------- Image Resizing --------------------
 def get_resized_image(image_path, target_width=320, target_height=180):
