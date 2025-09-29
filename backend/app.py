@@ -68,7 +68,7 @@ def get_resized_image(image_path, target_width=320, target_height=480):
         new_width = target_width
         new_height = int(new_width / img_ratio)
 
-    img = img.resize((new_width, new_height), Image.ANTIALIAS)
+    img = img.resize((new_width, new_height), Image.Resampling.LANCZOS)
 
     left = (new_width - target_width) / 2
     top = (new_height - target_height) / 2
