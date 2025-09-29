@@ -1,6 +1,5 @@
 import streamlit as st
 from pathlib import Path
-from PIL import Image
 from events_data import EVENTS, ASSETS_DIR
 from ledger import add_transaction, get_ledger
 from datetime import datetime
@@ -11,19 +10,28 @@ st.set_page_config(page_title="Ticket_Biz", layout="wide")
 with open(Path(__file__).parent / "styles.css") as f:
     st.markdown(f"<style>{f.read()}</style>", unsafe_allow_html=True)
 
-# Title
-st.markdown(
-    '<h1 style="color:#e50914;text-align:center;font-size:60px;">🎟 Ticket_Biz — Event Ticketing</h1>',
-    unsafe_allow_html=True
-)
-
-# Session State
+# -------------------- Session State --------------------
 if "mode" not in st.session_state:
     st.session_state.mode = None
 if "selected_event" not in st.session_state:
     st.session_state.selected_event = None
 
-# Buttons under heading
+# -------------------- Page Title --------------------
+st.markdown(
+    '<h1 style="color:#e50914;text-align:center;font-size:100px;">🎟 Ticket_Biz — Event Ticketing</h1>',
+    unsafe_allow_html=True
+)
+
+# -------------------- Welcome Paragraph --------------------
+st.markdown(
+    '<p style="text-align:center; font-size:20px; color:#ddd; max-width:800px; margin:auto;">'
+    'Welcome to Ticket_Biz! This platform allows you to book and check-in for various exciting events, '
+    'all while keeping your transactions secure using blockchain technology.'
+    '</p>',
+    unsafe_allow_html=True
+)
+
+# -------------------- Center Buttons --------------------
 st.markdown('<div class="center-buttons">', unsafe_allow_html=True)
 c1, c2, c3 = st.columns([2,1,2])
 with c2:
@@ -38,7 +46,7 @@ with c2:
             st.session_state.selected_event = None
 st.markdown('</div>', unsafe_allow_html=True)
 
-# Show event grid only if mode selected
+# -------------------- Event Grid --------------------
 if st.session_state.mode and st.session_state.selected_event is None:
     st.markdown('<div class="event-grid">', unsafe_allow_html=True)
     for event in EVENTS:
@@ -57,14 +65,12 @@ if st.session_state.mode and st.session_state.selected_event is None:
                 f'🎟️ Tickets left: <b>{event["available_tickets"]}</b><br>💰 Price: ₹{event["price"]}</div>',
                 unsafe_allow_html=True
             )
-            if event["available_tickets"] <= 0:
-                st.markdown('<span class="status-badge full">FULL</span>', unsafe_allow_html=True)
             if st.button(event["name"], key=f"btn_{event['id']}"):
                 st.session_state.selected_event = event["name"]
             st.markdown('</div></div>', unsafe_allow_html=True)
     st.markdown('</div>', unsafe_allow_html=True)
 
-# After event selected
+# -------------------- Selected Event --------------------
 if st.session_state.selected_event:
     event = next(e for e in EVENTS if e["name"] == st.session_state.selected_event)
     st.markdown(f"<h2 style='text-align:center;color:#e50914;'>{event['name']}</h2>", unsafe_allow_html=True)
@@ -94,5 +100,8 @@ if st.session_state.selected_event:
             else:
                 st.error("Invalid Ticket UID or Email ❌")
 
-# Footer
-st.markdown('<div class="footer">Ticket_Biz © 2025. Powered by <span>Blockchain Technology</span>.</div>', unsafe_allow_html=True)
+# -------------------- Footer --------------------
+st.markdown(
+    '<div class="footer">Ticket_Biz © 2025. Powered by <span>Blockchain Technology</span>.</div>',
+    unsafe_allow_html=True
+)
