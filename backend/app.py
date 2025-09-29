@@ -95,7 +95,7 @@ for idx, ev in enumerate(EVENTS):
         img_path = ASSETS_DIR / ev.get("image","placeholder.jpeg")
         try: img = Image.open(img_path)
         except: img = Image.open(ASSETS_DIR / "placeholder.jpeg")
-        st.image(img, use_column_width=True)
+        st.image(img, use_container_width=True)
         st.write(ev.get("desc",""))
         st.write(f"Price: ₹{ev.get('price',100)}")
         if st.button(f"Buy — {ev['name']}", key=f"buy_{idx}"):
