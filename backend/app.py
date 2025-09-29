@@ -82,7 +82,7 @@ if "show_ledger" not in st.session_state:
     st.session_state["show_ledger"] = False
 
 # Title
-st.title("🎟 TicketBiz Clone — Single Page App")
+st.title("🎟 TicketBiz App")
 st.markdown("Browse events, buy tickets, check-in, and see blockchain ledger.")
 
 # Event browsing
