@@ -1,61 +1,44 @@
 import csv
 from pathlib import Path
 import hashlib
+from datetime import datetime
 
 LEDGER_FILE = Path(__file__).parent / "ledger.csv"
 
-def add_transaction(event_name, email, tickets_bought, timestamp,
-                    first_name="", last_name="", student_id=""):
-    """
-    Adds a transaction to the blockchain-style ledger.
-    Includes:
-    - Event info
-    - Customer info (first name, last name, student ID, email)
-    - Number of tickets bought
-    - Timestamp
-    - Previous hash and current hash
-    """
-    previous_hash = ""
-    if LEDGER_FILE.exists():
-        with open(LEDGER_FILE, newline="") as f:
-            rows = list(csv.DictReader(f))
-            if rows:
-                previous_hash = rows[-1]["hash"]
+# Ensure ledger file exists
+if not LEDGER_FILE.exists():
+    with open(LEDGER_FILE, "w", newline="") as f:
+        writer = csv.DictWriter(f, fieldnames=["event","first_name","last_name","uid","tickets","timestamp","hash"])
+        writer.writeheader()
 
-    # Generate a short unique ticket UID
-    ticket_uid = hashlib.sha256(f"{email}{timestamp}".encode()).hexdigest()[:8]
+def calculate_hash(record, previous_hash=""):
+    record_string = f"{record['event']}{record['first_name']}{record['last_name']}{record['uid']}{record['tickets']}{record['timestamp']}{previous_hash}"
+    return hashlib.sha256(record_string.encode()).hexdigest()
 
-    # Compute current hash
-    data_str = f"{event_name}{email}{tickets_bought}{timestamp}{previous_hash}{first_name}{last_name}{student_id}"
-    current_hash = hashlib.sha256(data_str.encode()).hexdigest()
+def add_transaction(event, first_name, last_name, uid, tickets):
+    ledger = get_ledger()
+    previous_hash = ledger[-1]["hash"] if ledger else ""
+    timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    record = {
+        "event": event,
+        "first_name": first_name,
+        "last_name": last_name,
+        "uid": uid,
+        "tickets": tickets,
+        "timestamp": timestamp,
+        "hash": ""
+    }
+    record["hash"] = calculate_hash(record, previous_hash)
 
-    file_exists = LEDGER_FILE.exists()
     with open(LEDGER_FILE, "a", newline="") as f:
-        writer = csv.DictWriter(f, fieldnames=[
-            "ticket_uid","event","first_name","last_name","student_id",
-            "email","tickets_bought","timestamp","prev_hash","hash"
-        ])
-        if not file_exists:
-            writer.writeheader()
-        writer.writerow({
-            "ticket_uid": ticket_uid,
-            "event": event_name,
-            "first_name": first_name,
-            "last_name": last_name,
-            "student_id": student_id,
-            "email": email,
-            "tickets_bought": tickets_bought,
-            "timestamp": timestamp,
-            "prev_hash": previous_hash,
-            "hash": current_hash
-        })
+        writer = csv.DictWriter(f, fieldnames=record.keys())
+        writer.writerow(record)
 
 def get_ledger():
-    """
-    Returns all transactions from the ledger as a list of dictionaries.
-    """
-    if not LEDGER_FILE.exists():
-        return []
-    with open(LEDGER_FILE, newline="") as f:
+    records = []
+    with open(LEDGER_FILE, "r") as f:
         reader = csv.DictReader(f)
-        return list(reader)
+        for row in reader:
+            row["tickets"] = int(row["tickets"])
+            records.append(row)
+    return records
