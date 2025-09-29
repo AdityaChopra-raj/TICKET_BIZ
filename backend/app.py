@@ -33,9 +33,9 @@ st.markdown(
 
 # -------------------- Center Buttons --------------------
 st.markdown('<div class="center-buttons">', unsafe_allow_html=True)
-c1, c2, c3 = st.columns([2,1,2])
+c1, c2, c3 = st.columns([1,1,1])
 with c2:
-    colb1, colb2 = st.columns(2)
+    colb1, colb2, colb3 = st.columns(3)
     with colb1:
         if st.button("🎟 Buy Ticket", key="buy_button"):
             st.session_state.mode = "buy"
@@ -43,6 +43,10 @@ with c2:
     with colb2:
         if st.button("✅ Check-In", key="checkin_button"):
             st.session_state.mode = "checkin"
+            st.session_state.selected_event = None
+    with colb3:
+        if st.button("🔗 Blockchain", key="blockchain_button"):
+            st.session_state.mode = "blockchain"
             st.session_state.selected_event = None
 st.markdown('</div>', unsafe_allow_html=True)
 
