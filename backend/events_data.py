@@ -1,30 +1,28 @@
 import os
-
-BASE_IMAGE_PATH = os.path.join(os.path.dirname(__file__), "assets")
-
+BASE_IMAGE_PATH = "assets"
 events = [
     {
         "name": "Navratri Pooja",
-        "total_tickets": 100,
-        "tickets_scanned": 0,
-        "image": os.path.join(BASE_IMAGE_PATH, "navratri.jpeg")
+        "image": os.path.join(BASE_IMAGE_PATH, "navratri.jpeg"),
+        "tickets": [f"NAV{str(i).zfill(3)}" for i in range(1, 101)],
+        "scanned_tickets": []
     },
     {
         "name": "Diwali Dance",
-        "total_tickets": 150,
-        "tickets_scanned": 0,
-        "image": os.path.join(BASE_IMAGE_PATH, "diwali.jpeg")
+        "image": os.path.join(BASE_IMAGE_PATH, "diwali.jpeg"),
+        "tickets": [f"DIA{str(i).zfill(3)}" for i in range(1, 101)],
+        "scanned_tickets": []
     },
     {
         "name": "Freshers",
-        "total_tickets": 200,
-        "tickets_scanned": 0,
-        "image": os.path.join(BASE_IMAGE_PATH, "freshers.jpeg")
+        "image": os.path.join(BASE_IMAGE_PATH, "freshers.jpeg"),
+        "tickets": [f"FRE{str(i).zfill(3)}" for i in range(1, 101)],
+        "scanned_tickets": []
     },
     {
         "name": "Ravan Dehan",
-        "total_tickets": 80,
-        "tickets_scanned": 0,
-        "image": os.path.join(BASE_IMAGE_PATH, "ravan_dehan.jpeg")
-    }
+        "image": os.path.join(BASE_IMAGE_PATH, "ravan.jpeg"),
+        "tickets": [f"RAV{str(i).zfill(3)}" for i in range(1, 101)],
+        "scanned_tickets": []
+    },
 ]
