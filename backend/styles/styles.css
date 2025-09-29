@@ -1,10 +1,8 @@
-/* Horizontal scrolling container */
 .horizontal-scroll {
     display: flex;
     overflow-x: auto;
     gap: 20px;
     padding: 15px 0;
-    scroll-behavior: smooth;
 }
 
 .horizontal-scroll::-webkit-scrollbar {
@@ -16,11 +14,6 @@
     border-radius: 4px;
 }
 
-.horizontal-scroll::-webkit-scrollbar-track {
-    background: #222;
-}
-
-/* Event cards */
 .card {
     min-width: 260px;
     max-width: 260px;
@@ -33,55 +26,24 @@
     flex-shrink: 0;
 }
 
-/* Square image */
-.card img {
-    width: 100%;
-    aspect-ratio: 1 / 1;
-    object-fit: cover;
-    border-radius: 10px;
-}
-
-/* Hover effect */
 .card:hover {
     transform: scale(1.05);
     box-shadow: 0 12px 30px rgba(0,0,0,0.9);
 }
 
-/* Text styles */
 .card h3 {
-    text-align: center;
     color: #e50914;
     margin-top: 10px;
-    font-size: 18px;
 }
 
 .card p {
-    text-align: left;
     color: #ddd;
     font-size: 14px;
     margin: 5px 0;
 }
 
 .card .price {
-    text-align: left;
     color: #fff;
     font-weight: bold;
     margin-top: 5px;
-}
-
-.card button {
-    margin-top: 10px;
-    width: 100%;
-    background-color: #e50914;
-    color: white;
-    border: none;
-    padding: 8px;
-    border-radius: 8px;
-    cursor: pointer;
-    font-weight: bold;
-    transition: background 0.3s;
-}
-
-.card button:hover {
-    background-color: #b0060f;
 }
