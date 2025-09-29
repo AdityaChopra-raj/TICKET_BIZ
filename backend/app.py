@@ -7,7 +7,7 @@ from events_data import EVENTS
 from ledger import add_block, read_ledger, init_ledger
 from pathlib import Path
 
-st.set_page_config(page_title="TicketBiz Clone", layout="wide")
+st.set_page_config(page_title="TicketBiz ", layout="wide")
 BASE_DIR = Path(__file__).parent
 ASSETS_DIR = BASE_DIR / "assets"
 TICKETS_CSV = BASE_DIR / "tickets.csv"
