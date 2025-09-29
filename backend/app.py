@@ -99,22 +99,27 @@ Click <b>Buy</b> on an event to reserve your ticket instantly.
 
 st.markdown('<div class="horizontal-scroll">', unsafe_allow_html=True)
 
+st.markdown('<div class="horizontal-scroll">', unsafe_allow_html=True)
+
 for ev in EVENTS:
-    st.markdown(f'''
-        <div class="card">
-            <h3>{ev["name"]}</h3>
-        </div>
-    ''', unsafe_allow_html=True)
-    img_path = ASSETS_DIR / ev.get("image","placeholder.jpeg")
+    img_path = ASSETS_DIR / ev.get("image", "placeholder.jpeg")
     try:
         img = Image.open(img_path)
     except:
         img = Image.open(ASSETS_DIR / "placeholder.jpeg")
-    st.image(img, use_container_width=True)  # fills the card width
-    st.markdown(f'<p style="text-align:left; color:#ddd;">{ev.get("desc","")}</p>', unsafe_allow_html=True)
-    st.markdown(f'<p style="text-align:left; color:#ccc; font-weight:bold;">Price: ₹{ev.get("price",100)}</p>', unsafe_allow_html=True)
-    if st.button(f"Buy — {ev['name']}", key=f"buy_{ev['name']}"):
-        st.session_state["buy_event"] = ev["name"]
+    
+    st.markdown(f'''
+    <div class="card">
+        <img src="{img_path}" alt="{ev['name']}">
+        <h3>{ev["name"]}</h3>
+        <p>{ev.get("desc","")}</p>
+        <p class="price">Price: ₹{ev.get("price",100)}</p>
+        <button onclick="alert('Buying ticket for {ev["name"]}')">Buy</button>
+    </div>
+    ''', unsafe_allow_html=True)
+
+st.markdown('</div>', unsafe_allow_html=True)
+
 
 st.markdown('</div>', unsafe_allow_html=True)
 
