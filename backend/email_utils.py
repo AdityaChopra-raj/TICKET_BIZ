@@ -1,25 +1,26 @@
 import smtplib
-from email.message import EmailMessage
+from email.mime.text import MIMEText
+from email.mime.multipart import MIMEMultipart
 import streamlit as st
 
-def send_email(to_email, subject, content):
+EMAIL_ADDRESS = st.secrets.get("email", {}).get("address")
+EMAIL_PASSWORD = st.secrets.get("email", {}).get("password")
+
+def send_email(to_address, subject, content):
+    if not EMAIL_ADDRESS or not EMAIL_PASSWORD:
+        st.warning("Email credentials not set. Email not sent.")
+        return
+    msg = MIMEMultipart()
+    msg["From"] = EMAIL_ADDRESS
+    msg["To"] = to_address
+    msg["Subject"] = subject
+    msg.attach(MIMEText(content, "plain"))
     try:
-        email_address = st.secrets["email"]["address"]
-        email_password = st.secrets["email"]["password"]
-        smtp_server = st.secrets["email"]["smtp_server"]
-        smtp_port = st.secrets["email"]["smtp_port"]
-
-        msg = EmailMessage()
-        msg["Subject"] = subject
-        msg["From"] = email_address
-        msg["To"] = to_email
-        msg.set_content(content)
-
-        with smtplib.SMTP(smtp_server, smtp_port) as smtp:
-            smtp.starttls()
-            smtp.login(email_address, email_password)
-            smtp.send_message(msg)
-        return True
+        server = smtplib.SMTP("smtp.gmail.com", 587)
+        server.starttls()
+        server.login(EMAIL_ADDRESS, EMAIL_PASSWORD)
+        server.send_message(msg)
+        server.quit()
+        st.success(f"Email sent to {to_address}")
     except Exception as e:
         st.error(f"Failed to send email: {e}")
-        return False
