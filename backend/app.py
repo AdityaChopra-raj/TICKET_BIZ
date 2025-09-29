@@ -79,34 +79,44 @@ def get_resized_image(image_path, target_width=320, target_height=480):
 
     return img
 
-# -------------------- Event Grid --------------------
+# -------------------- Trending Events Section --------------------
 if st.session_state.mode in ["buy", "checkin"] and st.session_state.selected_event is None:
+    st.markdown('<h2 class="section-title">Trending Events</h2>', unsafe_allow_html=True)
     st.markdown('<div class="event-grid">', unsafe_allow_html=True)
+    
     for event in EVENTS:
-        with st.container():
-            st.markdown('<div class="event-card">', unsafe_allow_html=True)
-            img_path = ASSETS_DIR / event["image"]
-            if not img_path.exists():
-                img_path = ASSETS_DIR / "placeholder.jpg"
-
-            resized_img = get_resized_image(img_path)
-            temp_path = ASSETS_DIR / "temp_display.png"
-            resized_img.save(temp_path)
-            st.image(str(temp_path), use_container_width=True)
-
-            st.markdown('<div class="card-content">', unsafe_allow_html=True)
-            st.markdown(f'<div class="card-title">{event.get("name","")}</div>', unsafe_allow_html=True)
-            st.markdown(f'<div class="card-desc">{event.get("description","")}</div>', unsafe_allow_html=True)
-            st.markdown(
-                f'<div class="card-details">📅 {event.get("date","")}<br>📍 {event.get("location","")}<br>'
-                f'🎟️ Tickets left: <b>{event.get("available_tickets",0)}</b><br>'
-                f'✅ Check-Ins: <b>{event.get("check_ins",0)}</b><br>'
-                f'💰 Price: ₹{event.get("price",0)}</div>',
-                unsafe_allow_html=True
-            )
-            if st.button(event.get("name",""), key=f"btn_{event.get('id','')}"):
-                st.session_state.selected_event = event.get("name")
-            st.markdown('</div></div>', unsafe_allow_html=True)
+        st.markdown('<div class="event-card">', unsafe_allow_html=True)
+        
+        # Image + Available tag
+        st.markdown('<div class="card-image-container">', unsafe_allow_html=True)
+        img_path = ASSETS_DIR / event["image"]
+        if not img_path.exists():
+            img_path = ASSETS_DIR / "placeholder.jpg"
+        resized_img = get_resized_image(img_path, target_width=400, target_height=220)
+        temp_path = ASSETS_DIR / "temp_display.png"
+        resized_img.save(temp_path)
+        st.image(str(temp_path), use_column_width=True)
+        st.markdown('<div class="availability-tag">AVAILABLE</div>', unsafe_allow_html=True)
+        st.markdown('</div>', unsafe_allow_html=True)
+        
+        # Card content
+        st.markdown('<div class="card-content">', unsafe_allow_html=True)
+        st.markdown(f'<div class="card-title">{event.get("name","Event Title")}</div>', unsafe_allow_html=True)
+        st.markdown(f'<div class="card-desc">{event.get("description","Short description goes here.")}</div>', unsafe_allow_html=True)
+        
+        # Details with icons
+        st.markdown('<div class="card-details">', unsafe_allow_html=True)
+        st.markdown(f'<div>📅 {event.get("date","DD-MM-YYYY HH:MM")}</div>', unsafe_allow_html=True)
+        st.markdown(f'<div>📍 {event.get("location","Venue Address")}</div>', unsafe_allow_html=True)
+        st.markdown(f'<div>🎟️ {event.get("available_tickets",0)}/{event.get("available_tickets",0)} tickets left</div>', unsafe_allow_html=True)
+        st.markdown(f'<div>₹ From {event.get("price",0)} - {event.get("price",0)}</div>', unsafe_allow_html=True)
+        st.markdown('</div>', unsafe_allow_html=True)
+        
+        # Book Now Button
+        st.markdown('<button>Book Now</button>', unsafe_allow_html=True)
+        st.markdown('</div>', unsafe_allow_html=True)
+        st.markdown('</div>', unsafe_allow_html=True)
+    
     st.markdown('</div>', unsafe_allow_html=True)
 
 # -------------------- Selected Event --------------------
