@@ -25,24 +25,25 @@ def get_resized_image(image_path, width=320, height=180):
     return img.resize((width, height))
 
 def show_event_card(event, scope_id=""):
+    # Open card container
     st.markdown('<div class="event-card">', unsafe_allow_html=True)
     
-    # Event Image
+    # --- Image ---
     img = get_resized_image(ASSETS_DIR / event["image"])
     st.image(img, use_container_width=True)
-
-    # Availability badge below image
+    
+    # --- Availability Badge ---
     availability = "AVAILABLE" if event["available_tickets"] > 0 else "FULL"
     color = "#16a34a" if event["available_tickets"] > 0 else "#ff0000"
     st.markdown(f'''
         <div class="availability-badge" style="background-color:{color};">{availability}</div>
     ''', unsafe_allow_html=True)
-
-    # Title & Description
+    
+    # --- Title & Description ---
     st.markdown(f'<div class="event-title">{event["name"]}</div>', unsafe_allow_html=True)
     st.markdown(f'<div class="event-description">{event["description"]}</div>', unsafe_allow_html=True)
-
-    # Event Details
+    
+    # --- Event Details ---
     st.markdown(f'''
         <div class="event-details">
             📅 {event["date"]} <br>
@@ -51,8 +52,8 @@ def show_event_card(event, scope_id=""):
             💰 From ₹{event["price"]}
         </div>
     ''', unsafe_allow_html=True)
-
-    # Buttons under card
+    
+    # --- Buttons under card ---
     st.markdown('<div class="card-buttons">', unsafe_allow_html=True)
     buy_key = f"buy_btn_{event['id']}_{scope_id}"
     if st.button("Buy Ticket", key=buy_key):
@@ -66,7 +67,7 @@ def show_event_card(event, scope_id=""):
         st.experimental_rerun()
     st.markdown('</div>', unsafe_allow_html=True)
 
-    # Buy Ticket Form
+    # --- Buy Ticket Form (inside card) ---
     if st.session_state.mode == "buy" and st.session_state.selected_event == event["id"] and event["available_tickets"] > 0:
         st.markdown('<div class="buy-checkin-form">', unsafe_allow_html=True)
         first_name = st.text_input("First Name", key=f"first_{event['id']}_{scope_id}")
@@ -91,7 +92,7 @@ def show_event_card(event, scope_id=""):
                 st.success(f"Tickets purchased successfully! {event['available_tickets']} tickets remaining.")
         st.markdown('</div>', unsafe_allow_html=True)
 
-    # Check-In Form
+    # --- Check-In Form (inside card) ---
     if st.session_state.mode == "checkin" and st.session_state.selected_event == event["id"]:
         st.markdown('<div class="buy-checkin-form">', unsafe_allow_html=True)
         check_uid = st.text_input("Enter Ticket UID", key=f"checkin_uid_{event['id']}_{scope_id}")
@@ -113,7 +114,8 @@ def show_event_card(event, scope_id=""):
                 st.warning("No matching ticket found!")
         st.markdown('</div>', unsafe_allow_html=True)
 
-    st.markdown('</div>', unsafe_allow_html=True)  # Close event-card
+    # Close card container
+    st.markdown('</div>', unsafe_allow_html=True)
 
 # --- Tabs ---
 tabs = st.tabs(["Home", "Buy Ticket", "Check-In", "Blockchain"])
