@@ -77,7 +77,7 @@ for ev in EVENTS:
         img = Image.open(ASSETS_DIR / ev["image"])
     except:
         img = Image.open(ASSETS_DIR / "placeholder.txt")
-    st.image(img, use_column_width=True)
+    st.image(img, use_container_width=True)
     st.markdown('<div class="status-badge">Available</div>', unsafe_allow_html=True)
     st.markdown('<div class="card-content">', unsafe_allow_html=True)
     st.markdown(f'<div class="card-title">{ev["name"]}</div>', unsafe_allow_html=True)
