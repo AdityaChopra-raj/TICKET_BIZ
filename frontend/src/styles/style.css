@@ -1,0 +1,38 @@
+/* Card container */
+.card {
+    border-radius: 15px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    padding: 10px;
+    margin: 10px 0;
+    background-color: #1c1c1c;
+    color: white;
+}
+
+/* Hover effect */
+.card:hover {
+    transform: scale(1.03);
+    box-shadow: 0 8px 25px rgba(0,0,0,0.5);
+}
+
+/* Buttons */
+.stButton>button {
+    background-color: #e50914;
+    color: white;
+    border-radius: 8px;
+    padding: 10px 20px;
+    font-weight: bold;
+    transition: all 0.3s ease;
+}
+
+.stButton>button:hover {
+    background-color: #f40612;
+    transform: scale(1.05);
+}
+
+/* Streamlit input boxes */
+.stTextInput>div>input {
+    border-radius: 8px;
+    padding: 8px;
+    border: 1px solid #ccc;
+}
