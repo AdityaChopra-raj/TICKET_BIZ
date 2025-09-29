@@ -81,12 +81,24 @@ if "show_checkin" not in st.session_state:
 if "show_ledger" not in st.session_state:
     st.session_state["show_ledger"] = False
 
-# Title
-st.title("🎟 TicketBiz Clone — Single Page App")
-st.markdown("Browse events, buy tickets, check-in, and see blockchain ledger.")
+# --- Main Title & Subtitle ---
+st.markdown('<h1 style="text-align:center; color:white;">🎟 TicketBiz — Seamless Event Ticketing</h1>', unsafe_allow_html=True)
+st.markdown('''
+<p style="text-align:center; color:#ccc; font-size:18px;">
+Welcome to <b>TicketBiz</b>, your all-in-one platform to browse events, buy tickets securely, and manage check-ins effortlessly.  
+Experience a modern, blockchain-backed ticketing system with email confirmations and a real-time ledger to track your tickets.
+</p>
+''', unsafe_allow_html=True)
 
-# --- Events Section (Horizontal Scroll) ---
-st.header("🎬 Events")
+# --- Events Section ---
+st.markdown('<h2 style="text-align:center; color:#e50914;">🎬 Featured Events</h2>', unsafe_allow_html=True)
+st.markdown('''
+<p style="text-align:center; color:#ccc; font-size:16px;">
+Discover our curated selection of exciting events. Scroll horizontally to explore upcoming shows, festivals, and parties.  
+Click <b>Buy</b> on an event to reserve your ticket instantly.
+</p>
+''', unsafe_allow_html=True)
+
 st.markdown('<div class="horizontal-scroll">', unsafe_allow_html=True)
 
 for ev in EVENTS:
@@ -101,8 +113,8 @@ for ev in EVENTS:
     except:
         img = Image.open(ASSETS_DIR / "placeholder.jpeg")
     st.image(img, use_container_width=True)
-    st.write(ev.get("desc",""))
-    st.write(f"Price: ₹{ev.get('price',100)}")
+    st.markdown(f'<p style="text-align:left; color:#ddd;">{ev.get("desc","")}</p>', unsafe_allow_html=True)
+    st.markdown(f'<p style="text-align:left; color:#ccc; font-weight:bold;">Price: ₹{ev.get("price",100)}</p>', unsafe_allow_html=True)
     if st.button(f"Buy — {ev['name']}", key=f"buy_{ev['name']}"):
         st.session_state["buy_event"] = ev["name"]
 
@@ -112,7 +124,14 @@ st.markdown('</div>', unsafe_allow_html=True)
 if st.session_state["buy_event"]:
     ev_name = st.session_state["buy_event"]
     st.markdown("---")
-    st.header(f"Buy Ticket — {ev_name}")
+    st.markdown(f'<h2 style="text-align:center; color:#e50914;">💳 Purchase Ticket — {ev_name}</h2>', unsafe_allow_html=True)
+    st.markdown('''
+    <p style="text-align:center; color:#ccc; font-size:16px;">
+    Fill in your details below to purchase your ticket. Payments are simulated for demo purposes, but your ticket UID and email confirmation are live.  
+    Once purchased, your ticket will be recorded on our secure blockchain ledger.
+    </p>
+    ''', unsafe_allow_html=True)
+
     col1, col2 = st.columns(2)
     with col1:
         first = st.text_input("First Name", key="first")
@@ -137,7 +156,15 @@ if st.session_state["buy_event"]:
 # --- Check-in Section ---
 if st.session_state["show_checkin"]:
     st.markdown("---")
-    st.header("✅ Check-in / Verify Ticket")
+    st.markdown('<h2 style="text-align:center; color:#e50914;">✅ Ticket Check-In</h2>', unsafe_allow_html=True)
+    st.markdown('''
+    <p style="text-align:center; color:#ccc; font-size:16px;">
+    Verify your ticket by entering the <b>UID</b> provided in your purchase confirmation email.  
+    Our blockchain ledger ensures that each ticket is secure and tamper-proof.  
+    Check-in status will be updated in real-time and confirmation emails will be sent automatically.
+    </p>
+    ''', unsafe_allow_html=True)
+
     uid_input = st.text_input("Enter ticket UID", key="check_uid")
     if st.button("Check In"):
         if not uid_input:
@@ -165,7 +192,15 @@ if st.session_state["show_checkin"]:
 # --- Blockchain Ledger ---
 if st.session_state["show_ledger"]:
     st.markdown("---")
-    st.header("🔗 Blockchain Ledger (Admin)")
+    st.markdown('<h2 style="text-align:center; color:#e50914;">🔗 Blockchain Ledger</h2>', unsafe_allow_html=True)
+    st.markdown('''
+    <p style="text-align:center; color:#ccc; font-size:16px;">
+    All ticket purchases and check-ins are recorded on a transparent blockchain ledger.  
+    Each block contains UID, purchaser name, action, timestamp, and hash values.  
+    This ensures your ticket history is secure, immutable, and verifiable.
+    </p>
+    ''', unsafe_allow_html=True)
+
     ledger_rows = read_ledger()
     if not ledger_rows:
         st.info("Ledger empty")
@@ -180,7 +215,7 @@ if st.session_state["show_ledger"]:
                 box-shadow:0 8px 20px rgba(0,0,0,0.6);
                 color:#eee;
             ">
-            <h4 style="color:#e50914">Block {row['index']}</h4>
+            <h4 style="text-align:center; color:#e50914;">Block {row['index']}</h4>
             <p><b>Timestamp:</b> {row['timestamp']}</p>
             <p><b>UID:</b> {row['uid']}</p>
             <p><b>Name:</b> {row['first_name']} {row['last_name']}</p>
@@ -194,3 +229,11 @@ if st.session_state["show_ledger"]:
     if st.button("Download ledger CSV"):
         with open("ledger.csv","rb") as f:
             st.download_button("Download ledger.csv", f, file_name="ledger.csv")
+
+# --- Footer ---
+st.markdown('''
+<p style="text-align:center; color:#666; font-size:12px;">
+© 2025 TicketBiz. Designed with ❤️ using Streamlit.  
+For support or inquiries, contact <b>support@ticketbiz.com</b>.
+</p>
+''', unsafe_allow_html=True)
