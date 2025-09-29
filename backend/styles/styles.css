@@ -2,8 +2,8 @@
 .horizontal-scroll {
     display: flex;
     overflow-x: auto;
-    gap: 15px;
-    padding-bottom: 10px;
+    gap: 20px;
+    padding-bottom: 15px;
 }
 
 .horizontal-scroll::-webkit-scrollbar {
@@ -19,20 +19,39 @@
     background: #222;
 }
 
-/* Event cards side by side */
+/* Event cards (Instagram-like posts) */
 .card {
-    min-width: 220px;   /* fixed width for side by side layout */
-    max-width: 220px;
+    min-width: 250px;
+    max-width: 250px;
     background: linear-gradient(180deg, #1c1c1c 0%, #111 100%);
     border-radius: 12px;
-    padding: 12px;
+    padding: 10px;
     box-shadow: 0 8px 25px rgba(0,0,0,0.7);
     text-align: center;
     transition: transform 0.3s, box-shadow 0.3s;
-    flex-shrink: 0;    /* prevents shrinking so cards stay side by side */
+    flex-shrink: 0;
 }
 
+/* Image inside card */
+.card img {
+    width: 100%;
+    aspect-ratio: 1 / 1;  /* square like Instagram post */
+    object-fit: cover;
+    border-radius: 10px;
+}
+
+/* Card hover effect */
 .card:hover {
     transform: scale(1.03);
     box-shadow: 0 12px 30px rgba(0,0,0,0.9);
+}
+
+/* Card text */
+.card p {
+    text-align: left;
+    color: #ddd;
+    font-size: 14px;
+}
+.card h3 {
+    text-align: center;
 }
