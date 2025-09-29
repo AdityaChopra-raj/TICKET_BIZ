@@ -85,22 +85,28 @@ if "show_ledger" not in st.session_state:
 st.title("🎟 TicketBiz App")
 st.markdown("Browse events, buy tickets, check-in, and see blockchain ledger.")
 
-# Event browsing
 st.header("🎬 Events")
-cols = st.columns(3)
-for idx, ev in enumerate(EVENTS):
-    col = cols[idx % 3]
-    with col:
-        st.markdown(f'<div class="card"><h3>{ev["name"]}</h3></div>', unsafe_allow_html=True)
-        img_path = ASSETS_DIR / ev.get("image","placeholder.jpeg")
-        try: img = Image.open(img_path)
-        except: img = Image.open(ASSETS_DIR / "placeholder.jpeg")
-        st.image(img, use_container_width=True)
-        st.write(ev.get("desc",""))
-        st.write(f"Price: ₹{ev.get('price',100)}")
-        if st.button(f"Buy — {ev['name']}", key=f"buy_{idx}"):
-            st.session_state["buy_event"] = ev["name"]
-            st.session_state["buy_index"] = idx
+st.markdown('<div class="horizontal-scroll">', unsafe_allow_html=True)
+
+for ev in EVENTS:
+    st.markdown(f'''
+        <div class="card">
+            <h3>{ev["name"]}</h3>
+        </div>
+    ''', unsafe_allow_html=True)
+    img_path = ASSETS_DIR / ev.get("image","placeholder.jpeg")
+    try:
+        img = Image.open(img_path)
+    except:
+        img = Image.open(ASSETS_DIR / "placeholder.jpeg")
+    st.image(img, use_container_width=True)
+    st.write(ev.get("desc",""))
+    st.write(f"Price: ₹{ev.get('price',100)}")
+    if st.button(f"Buy — {ev['name']}", key=f"buy_{ev['name']}"):
+        st.session_state["buy_event"] = ev["name"]
+
+st.markdown('</div>', unsafe_allow_html=True)
+
 
 # Buy form
 if st.session_state["buy_event"]:
