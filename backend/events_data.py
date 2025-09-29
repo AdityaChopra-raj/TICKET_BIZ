@@ -1,5 +1,4 @@
 from pathlib import Path
-
 ASSETS_DIR = Path(__file__).parent / "assets"
 
 EVENTS = [
@@ -12,6 +11,7 @@ EVENTS = [
         "price": 299,
         "total_tickets": 150,
         "available_tickets": 150,
+        "check_ins": 0,
         "image": "navratri.jpeg.avif",
     },
     {
@@ -23,6 +23,7 @@ EVENTS = [
         "price": 399,
         "total_tickets": 200,
         "available_tickets": 200,
+        "check_ins": 0,
         "image": "diwali.jpeg",
     },
     {
@@ -34,6 +35,7 @@ EVENTS = [
         "price": 199,
         "total_tickets": 120,
         "available_tickets": 120,
+        "check_ins": 0,
         "image": "freshers.jpeg",
     },
     {
@@ -45,6 +47,7 @@ EVENTS = [
         "price": 99,
         "total_tickets": 500,
         "available_tickets": 500,
+        "check_ins": 0,
         "image": "ravan.jpeg",
     },
     {
@@ -56,6 +59,7 @@ EVENTS = [
         "price": 499,
         "total_tickets": 100,
         "available_tickets": 100,
+        "check_ins": 0,
         "image": "club.jpeg",
     },
 ]
