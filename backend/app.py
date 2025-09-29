@@ -115,16 +115,37 @@ if st.session_state.selected_event:
     st.markdown(f"<h2 style='text-align:center;color:#e50914;'>{event['name']}</h2>", unsafe_allow_html=True)
     st.write(event["description"])
 
-    if st.session_state.mode == "buy":
-        st.markdown("### Buy Tickets")
-        max_tickets = min(15, event["available_tickets"])
-        qty = st.number_input("Number of tickets", min_value=1, max_value=max_tickets, value=1)
-        buyer_email = st.text_input("Your email")
-        if st.button("Confirm Purchase"):
-            if qty <= event["available_tickets"]:
-                event["available_tickets"] -= qty
-                add_transaction(event["name"], buyer_email, qty, datetime.now())
-                st.success(f"Purchased {qty} ticket(s) for {event['name']}")
+if st.session_state.mode == "buy":
+    st.markdown("### Buy Tickets")
+    
+    # Collect customer info
+    first_name = st.text_input("First Name")
+    last_name = st.text_input("Last Name")
+    student_id = st.text_input("Student ID")
+    email = st.text_input("Email Address")
+    
+    max_tickets = min(15, event["available_tickets"])
+    qty = st.number_input("Number of tickets", min_value=1, max_value=max_tickets, value=1)
+    
+    if st.button("Confirm Purchase"):
+        if not all([first_name, last_name, student_id, email]):
+            st.error("Please fill in all required fields!")
+        elif qty > event["available_tickets"]:
+            st.error("Not enough tickets available.")
+        else:
+            event["available_tickets"] -= qty
+            # Record transaction with all info
+            add_transaction(
+                event["name"],
+                email,
+                qty,
+                datetime.now(),
+                first_name=first_name,
+                last_name=last_name,
+                student_id=student_id
+            )
+            st.success(f"Purchased {qty} ticket(s) for {event['name']}")
+
             else:
                 st.error("Not enough tickets available.")
 
