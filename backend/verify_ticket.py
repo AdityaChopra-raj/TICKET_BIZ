@@ -1,9 +1,15 @@
-from events_data import events
-def verify_ticket(event_name, ticket_id, scanned_tickets_db):
-    if ticket_id in scanned_tickets_db:
-        return False, 'Ticket already scanned!'
-    if ticket_id.startswith(event_name[:3].upper()):
-        scanned_tickets_db.add(ticket_id)
-        events[event_name]['scanned_tickets'] += 1
-        return True, 'Ticket verified successfully!'
-    return False, 'Invalid ticket!'
+def verify_ticket(ticket_id, selected_event, events_list):
+    """
+    Simple verification: checks if ticket_id is numeric and updates scanned count
+    """
+    if not ticket_id.isdigit():
+        return False, "Invalid Ticket ID"
+    
+    for event in events_list:
+        if event["name"] == selected_event:
+            if event["tickets_scanned"] < event["total_tickets"]:
+                event["tickets_scanned"] += 1
+                return True, "Ticket verified successfully"
+            else:
+                return False, "All tickets for this event have been scanned"
+    return False, "Event not found"
