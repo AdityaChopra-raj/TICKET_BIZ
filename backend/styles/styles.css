@@ -1,5 +1,99 @@
-body {background-color:#0b0b0b;color:#eee;font-family:'Segoe UI',Roboto,Arial,sans-serif;}
-.card {background: linear-gradient(180deg, #111 0%, #151515 100%); border-radius:10px; padding:8px; margin-bottom:10px; box-shadow:0 8px 20px rgba(0,0,0,0.6); text-align:center;}
-.stButton>button {background-color:#e50914;color:white;border-radius:8px;padding:8px 16px;font-weight:600;}
-.stButton>button:hover {transform:scale(1.02);}
-[data-testid="stImage"] img {border-radius:6px;}
+/* Body & font */
+body {
+    background-color: #141414;
+    color: #ffffff;
+    font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+}
+
+/* Horizontal scrolling container */
+.horizontal-scroll {
+    display: flex;
+    overflow-x: auto;
+    gap: 15px;
+    padding-bottom: 10px;
+}
+
+.horizontal-scroll::-webkit-scrollbar {
+    height: 8px;
+}
+
+.horizontal-scroll::-webkit-scrollbar-thumb {
+    background: #e50914;
+    border-radius: 4px;
+}
+
+.horizontal-scroll::-webkit-scrollbar-track {
+    background: #222;
+}
+
+/* Event cards */
+.card {
+    min-width: 220px;
+    background: linear-gradient(180deg, #1c1c1c 0%, #111 100%);
+    border-radius: 12px;
+    padding: 12px;
+    box-shadow: 0 8px 25px rgba(0,0,0,0.7);
+    text-align: center;
+    transition: transform 0.3s, box-shadow 0.3s;
+    flex-shrink: 0;
+}
+
+.card:hover {
+    transform: scale(1.03);
+    box-shadow: 0 12px 30px rgba(0,0,0,0.9);
+}
+
+/* Headings in cards */
+.card h3 {
+    color: #e50914;
+    font-size: 1.2em;
+    margin-bottom: 8px;
+}
+
+/* Buttons */
+.stButton>button {
+    background-color: #e50914;
+    color: white;
+    border-radius: 6px;
+    padding: 10px 20px;
+    font-weight: 700;
+    border: none;
+    cursor: pointer;
+    transition: all 0.2s ease-in-out;
+}
+
+.stButton>button:hover {
+    background-color: #f6121d;
+    transform: scale(1.05);
+    box-shadow: 0 6px 15px rgba(0,0,0,0.7);
+}
+
+/* Inputs */
+.stTextInput>div>div>input {
+    background-color: #222;
+    color: #fff;
+    border: 1px solid #444;
+    border-radius: 6px;
+    padding: 8px;
+}
+
+.stTextInput>div>div>input:focus {
+    border: 1px solid #e50914;
+    outline: none;
+}
+
+/* Ledger blocks */
+[data-testid="stMarkdownContainer"] div[style*="linear-gradient"] {
+    transition: transform 0.2s;
+}
+
+[data-testid="stMarkdownContainer"] div[style*="linear-gradient"]:hover {
+    transform: scale(1.02);
+    box-shadow: 0 10px 25px rgba(0,0,0,0.8);
+}
+
+/* Images inside cards */
+[data-testid="stImage"] img {
+    border-radius: 8px;
+    margin-bottom: 10px;
+}
