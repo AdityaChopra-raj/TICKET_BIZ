@@ -1,2 +1,0 @@
-import React from 'react';
-export default function EventCard({event}){return (<div className='rounded-2xl shadow-lg overflow-hidden hover:scale-105 transition-transform duration-300 w-64 bg-gray-800'><img src={event.image} alt={event.name} className='w-full h-40 object-cover'/><div className='p-4'><h2 className='text-xl font-bold'>{event.name}</h2><p>Total: {event.total}</p><p>Scanned: {event.scanned}</p><p>Remaining: {event.remaining}</p><button className='mt-2 bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition'>Verify Ticket</button></div></div>);}

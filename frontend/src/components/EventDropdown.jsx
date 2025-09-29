@@ -1,2 +1,0 @@
-import React from 'react';
-export default function EventDropdown({events,selectedEvent,setSelectedEvent}){return (<select value={selectedEvent} onChange={(e)=>setSelectedEvent(e.target.value)} className='p-2 rounded bg-gray-700 text-white mb-4'>{events.map(event=><option key={event.name} value={event.name}>{event.name}</option>)}</select>);}

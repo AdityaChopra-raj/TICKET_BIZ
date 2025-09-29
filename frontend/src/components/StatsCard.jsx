@@ -1,2 +1,0 @@
-import React from 'react';
-export default function StatsCard({stats,label}){return (<div className='bg-gray-700 p-4 rounded-2xl shadow-md text-center w-40'><h3 className='text-sm text-gray-300'>{label}</h3><p className='text-xl font-bold'>{stats}</p></div>);}
