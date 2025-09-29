@@ -12,6 +12,8 @@ st.set_page_config(page_title="Ticket_Biz", layout="wide")
 # ------------------ Session State ------------------
 if "mode" not in st.session_state:
     st.session_state.mode = None
+if "selected_event" not in st.session_state:
+    st.session_state.selected_event = None
 
 # ------------------ Load CSS ------------------
 with open(Path(__file__).parent / "styles.css") as f:
@@ -51,8 +53,15 @@ def get_resized_image(img_name):
     return img
 
 def show_event_card(event):
+    # Clickable image to go to Buy Ticket form
+    if st.button("", key=f"img_btn_{event['id']}", help="Click to buy tickets"):
+        st.session_state.selected_event = event["id"]
+        st.session_state.mode = "buy"
+        st.experimental_rerun()
+
+    # Display image
     st.image(get_resized_image(event["image"]), use_container_width=True)
-    
+
     # Availability badge below the image
     availability = "AVAILABLE" if event["available_tickets"] > 0 else "FULL"
     avail_color = "#16a34a" if event["available_tickets"] > 0 else "#ff0000"
@@ -67,18 +76,18 @@ def show_event_card(event):
             margin-bottom: 8px;
         ">{availability}</div>
     ''', unsafe_allow_html=True)
-    
+
     # Event Title
     st.markdown(f'<div class="card-title">{event["name"]}</div>', unsafe_allow_html=True)
-    
+
     # Event Description
     st.markdown(f'<div class="card-desc">{event["description"]}</div>', unsafe_allow_html=True)
-    
+
     # Event Details
     st.markdown(f'<div class="card-details">📅 {event["date"]}<br>📍 {event["location"]}<br>🎟️ {event["available_tickets"]} tickets left<br>💰 From ₹{event["price"]}</div>', unsafe_allow_html=True)
-    
+
     # Inline Buy Ticket Form
-    if st.session_state.mode == "buy" and event["available_tickets"] > 0:
+    if st.session_state.mode == "buy" and st.session_state.get("selected_event") == event["id"] and event["available_tickets"] > 0:
         st.markdown('<hr style="border-color:#222;">', unsafe_allow_html=True)
         first_name = st.text_input("First Name", key=f"first_{event['id']}")
         last_name = st.text_input("Last Name", key=f"last_{event['id']}")
@@ -96,7 +105,7 @@ def show_event_card(event):
                 st.success(f"Tickets purchased successfully! {event['available_tickets']} tickets remaining.")
 
     # Inline Check-In Form
-    if st.session_state.mode == "checkin":
+    if st.session_state.mode == "checkin" and st.session_state.get("selected_event") == event["id"]:
         st.markdown('<hr style="border-color:#222;">', unsafe_allow_html=True)
         check_uid = st.text_input("Enter Ticket UID", key=f"checkin_uid_{event['id']}")
         email = st.text_input("Enter Email", key=f"checkin_email_{event['id']}")
