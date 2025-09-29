@@ -22,7 +22,7 @@ def local_css(file_name):
             st.markdown(f"<style>{f.read()}</style>", unsafe_allow_html=True)
     except Exception:
         pass
-local_css("styles/style.css")
+local_css(BASE_DIR / "styles/style.css")
 
 # Helpers
 def generate_uid():
@@ -48,7 +48,7 @@ def send_ticket_email(to_email, first_name, last_name, uid, event_name, qr_bytes
         msg["Subject"] = f"Your ticket for {event_name}"
         msg["From"] = email_conf["address"]
         msg["To"] = to_email
-        msg.set_content(f"Hi {first_name} {last_name},\\n\\nHere is your ticket UID: {uid}\\nEvent: {event_name}\\n\\nShow this QR at check-in.\\n\\n— TicketBiz Clone")
+        msg.set_content(f"Hi {first_name} {last_name},\n\nHere is your ticket UID: {uid}\nEvent: {event_name}\n\nShow this QR at check-in.\n\n— TicketBiz Clone")
 
         qr_bytes = qr_bytes_io.getvalue()
         msg.add_attachment(qr_bytes, maintype="image", subtype="png", filename=f"{uid}.png")
