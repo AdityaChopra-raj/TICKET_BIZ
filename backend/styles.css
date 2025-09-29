@@ -1,77 +1,77 @@
 body {
-    background: linear-gradient(180deg, #0b0c10, #111418);
-    font-family: 'Inter', 'Roboto', sans-serif;
+    background: linear-gradient(#0b0c10, #111418);
     color: #ddd;
+    font-family: 'Inter', 'Poppins', 'Roboto', sans-serif;
 }
-
-.center-buttons {
-    display: flex;
-    justify-content: center; /* centers the whole button group */
-    gap: 40px; /* spacing between buttons */
-    margin: 30px 0;
-    flex-wrap: wrap; /* keeps them on one row unless very narrow screen */
-}
-
-.center-buttons button {
-    background-color: #e50914;
-    color: white;
-    font-weight: bold;
-    font-size: 18px;
-    padding: 12px 28px;
-    border-radius: 8px;
-    border: none;
-    transition: 0.3s;
-    cursor: pointer;
-    min-width: 160px; /* ensures uniform button width */
-}
-
-.center-buttons button:hover {
-    background-color: #ff1a1a;
-}
-
 
 .section-title {
     text-align: center;
-    color: #fff;
-    font-size: 32px;
-    margin-bottom: 20px;
+    font-size: 36px;
+    font-weight: bold;
+    margin: 30px 0 20px 0;
+}
+
+.triangle-buttons {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin: 40px 0;
+}
+
+.triangle-buttons .row {
+    display: flex;
+    justify-content: center;
+    gap: 20px;
+    margin: 10px 0;
+}
+
+button {
+    background-color: #e50914;
+    color: white;
+    font-weight: bold;
+    padding: 12px 25px;
+    border-radius: 8px;
+    border: none;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+button:hover {
+    background-color: #ff1a1a;
 }
 
 .event-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
     gap: 25px;
     justify-items: center;
+    margin: 20px 0;
 }
 
 .event-card {
-    width: 320px;
-    background-color: #1a1a1a;
+    background-color: #1c1c1c;
     border-radius: 12px;
+    width: 320px;
     overflow: hidden;
-    box-shadow: 0 6px 20px rgba(0,0,0,0.6);
-    transition: 0.3s;
-    cursor: pointer;
+    transition: all 0.3s ease;
 }
 
 .event-card:hover {
     box-shadow: 0 0 20px #e50914;
-    transform: translateY(-6px);
 }
 
 .card-image-container {
     position: relative;
-    width: 100%;
 }
 
 .availability-tag {
     position: absolute;
     top: 10px;
     left: 10px;
-    padding: 4px 10px;
-    font-size: 12px;
+    padding: 3px 8px;
+    border-radius: 6px;
     font-weight: bold;
-    border-radius: 4px;
+    font-size: 12px;
 }
 
 .card-content {
@@ -79,9 +79,8 @@ body {
 }
 
 .card-title {
-    font-weight: bold;
     font-size: 20px;
-    color: #fff;
+    font-weight: bold;
     margin-bottom: 8px;
 }
 
@@ -97,73 +96,23 @@ body {
     margin-bottom: 4px;
 }
 
-.card-content button {
-    width: 100%;
-    height: 40px;
-    background-color: #e50914;
-    color: #fff;
-    font-weight: bold;
-    border: none;
-    border-radius: 6px;
-    margin-top: 10px;
-    cursor: pointer;
-    transition: 0.3s;
-}
-
-.card-content button:hover {
-    background-color: #ff1a1a;
-}
-
 .ledger-card {
-    background-color: #1a1a1a;
-    color: #ddd;
+    background-color: #111418;
     padding: 15px;
     margin: 10px 0;
-    border-radius: 10px;
-    box-shadow: 0 4px 15px rgba(0,0,0,0.5);
-    font-size: 14px;
-    word-wrap: break-word;
+    border-radius: 8px;
+    border: 1px solid #333;
 }
 
 .footer {
     text-align: center;
     color: #888;
     font-size: 13px;
-    padding: 20px 0;
+    padding: 15px;
     border-top: 1px solid #222;
 }
 
 .footer span {
     color: #e50914;
     font-weight: bold;
-}
-.triangle-buttons {
-    display: flex;
-    flex-direction: column;
-    align-items: center; /* center horizontally */
-    margin: 40px 0;
-    gap: 20px; /* vertical spacing between rows */
-}
-
-.triangle-buttons .row {
-    display: flex;
-    justify-content: center;
-    gap: 40px; /* spacing between buttons in a row */
-}
-
-.triangle-buttons button {
-    background-color: #e50914;
-    color: white;
-    font-weight: bold;
-    font-size: 18px;
-    padding: 12px 28px;
-    border-radius: 8px;
-    border: none;
-    transition: 0.3s;
-    cursor: pointer;
-    min-width: 160px; /* uniform button width */
-}
-
-.triangle-buttons button:hover {
-    background-color: #ff1a1a;
 }
