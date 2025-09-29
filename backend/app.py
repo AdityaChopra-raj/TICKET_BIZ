@@ -13,54 +13,31 @@ if "mode" not in st.session_state:
 if "selected_event" not in st.session_state:
     st.session_state.selected_event = None
 
-# ------------------ Styles ------------------
+# ------------------ Load CSS ------------------
 with open(Path(__file__).parent / "styles.css") as f:
     st.markdown(f"<style>{f.read()}</style>", unsafe_allow_html=True)
 
 # ------------------ Header ------------------
 st.markdown('<h1 style="text-align:center; color:#e50914; font-size:48px;">🎟 Ticket_Biz — Event Ticketing</h1>', unsafe_allow_html=True)
-st.markdown('<p style="text-align:center; color:#ddd; font-size:18px;">Welcome! Book tickets for events or check in attendees directly from this platform.</p>', unsafe_allow_html=True)
+st.markdown('<p style="text-align:center; color:#ddd; font-size:18px;">Welcome! Book tickets, check in attendees, or view the blockchain ledger.</p>', unsafe_allow_html=True)
 
-# ------------------ Triangular Buttons with Home ------------------
-st.markdown('<h1 style="text-align:center; color:#e50914; font-size:48px;">🎟 Ticket_Biz — Event Ticketing</h1>', unsafe_allow_html=True)
-st.markdown('<p style="text-align:center; color:#ddd; font-size:18px;">Welcome! Book tickets for events or check in attendees directly from this platform.</p>', unsafe_allow_html=True)
+# ------------------ Top Tabs Navigation ------------------
+tabs = ["Home", "Buy Ticket", "Check-In", "Blockchain Ledger"]
+selected_tab = st.radio("", tabs, index=0, horizontal=True)
 
-# Top Row: Buy Ticket (left) and Check-In (right)
-col1, col2, col3 = st.columns([1,1,1])
-with col1:
-    if st.button("Buy Ticket", key="btn_buy"):
-        st.session_state.mode = "buy"
-        st.session_state.selected_event = None
-with col3:
-    if st.button("Check-In", key="btn_checkin"):
-        st.session_state.mode = "checkin"
-        st.session_state.selected_event = None
-
-st.write("\n")  # Spacer
-
-# Middle Row: Home button centered
-col_left, col_center, col_right = st.columns([1,2,1])
-with col_center:
-    if st.button("Home", key="btn_home"):
-        st.session_state.mode = None
-        st.session_state.selected_event = None
-
-st.write("\n")  # Spacer
-
-# Bottom Row: Blockchain Ledger button centered
-col_left2, col_center2, col_right2 = st.columns([1,2,1])
-with col_center2:
-    if st.button("Blockchain Ledger", key="btn_blockchain"):
-        st.session_state.mode = "ledger"
-        st.session_state.selected_event = None
-
-
-# Row 2: Blockchain Ledger button centered
-col_left, col_center, col_right = st.columns([1,2,1])
-with col_center:
-    if st.button("Blockchain Ledger", key="btn_blockchain"):
-        st.session_state.mode = "ledger"
-        st.session_state.selected_event = None
+# Set mode based on tab
+if selected_tab == "Home":
+    st.session_state.mode = None
+    st.session_state.selected_event = None
+elif selected_tab == "Buy Ticket":
+    st.session_state.mode = "buy"
+    st.session_state.selected_event = None
+elif selected_tab == "Check-In":
+    st.session_state.mode = "checkin"
+    st.session_state.selected_event = None
+elif selected_tab == "Blockchain Ledger":
+    st.session_state.mode = "ledger"
+    st.session_state.selected_event = None
 
 # ------------------ Helper: Resize Image ------------------
 def get_resized_image(img_name):
@@ -72,7 +49,7 @@ def get_resized_image(img_name):
     img = img.resize((320, 180), Image.LANCZOS)
     return img
 
-# ------------------ Display Event Grid ------------------
+# ------------------ Trending Events Grid ------------------
 if st.session_state.mode in ["buy", "checkin"] and st.session_state.selected_event is None:
     st.markdown('<h2 class="section-title">Trending Events</h2>', unsafe_allow_html=True)
     rows = len(EVENTS) // 3 + (1 if len(EVENTS) % 3 else 0)
