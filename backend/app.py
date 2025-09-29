@@ -72,31 +72,45 @@ def send_ticket_email(to_email, first, last, uid, event_name):
 # -------------------- DISPLAY EVENTS --------------------
 st.markdown('<div class="grid-container">', unsafe_allow_html=True)
 for ev in EVENTS:
+    # Determine status
+    is_full = ev.get("tickets_left",0) <= 0
     dimmed_class = "dimmed" if st.session_state["selected_event"] and st.session_state["selected_event"] != ev["name"] else ""
     st.markdown(f'<div class="card {dimmed_class}">', unsafe_allow_html=True)
     
-    # --- SAFE IMAGE LOADING ---
+    # Safe image loading
     event_image_path = ASSETS_DIR / ev.get("image","")
     placeholder_path = ASSETS_DIR / "placeholder.jpg"
-    
     if event_image_path.exists() and event_image_path.is_file():
         img = Image.open(event_image_path)
     else:
         img = Image.open(placeholder_path)
-
     st.image(img, use_container_width=True)
-    st.markdown('<div class="status-badge">Available</div>', unsafe_allow_html=True)
+    
+    # Status badge
+    badge_color = "#16a34a" if not is_full else "#ff0000"
+    badge_text = "Available" if not is_full else "Full"
+    st.markdown(f'<div class="status-badge" style="background:{badge_color}">{badge_text}</div>', unsafe_allow_html=True)
+    
+    # Card content
     st.markdown('<div class="card-content">', unsafe_allow_html=True)
     st.markdown(f'<div class="card-title">{ev["name"]}</div>', unsafe_allow_html=True)
     st.markdown(f'<div class="card-desc">{ev["desc"]}</div>', unsafe_allow_html=True)
     st.markdown('<div class="card-details">', unsafe_allow_html=True)
     st.markdown(f'<span>📅 {ev.get("date","TBD")}</span>', unsafe_allow_html=True)
     st.markdown(f'<span>📍 {ev.get("location","Online")}</span>', unsafe_allow_html=True)
-    st.markdown(f'<span>🎟️ Tickets left: <span class="important">{ev.get("tickets_left",100)}</span></span>', unsafe_allow_html=True)
-    st.markdown(f'<span>💰 Price: ₹{ev.get("price",100)}</span>', unsafe_allow_html=True)
+    st.markdown(f'<span>🎟️ Tickets left: <span class="important">{ev.get("tickets_left",0)}</span></span>', unsafe_allow_html=True)
+    
+    # Count check-ins
+    check_in_count = 0
+    if TICKETS_CSV.exists():
+        check_in_count = sum(1 for t in csv.DictReader(open(TICKETS_CSV)) if t["event"]==ev["name"] and t["checked_in"])
+    st.markdown(f'<span>👥 Checked in: {check_in_count}</span>', unsafe_allow_html=True)
+    
+    st.markdown(f'<span>💰 Price: ₹{ev.get("price",0)}</span>', unsafe_allow_html=True)
     st.markdown('</div>', unsafe_allow_html=True)  # card-details
 
-    if st.button("Book Now", key=f"buy_{ev['name']}"):
+    # Book Now Button
+    if st.button("Book Now", key=f"buy_{ev['name']}") and not is_full:
         st.session_state["selected_event"] = ev["name"]
 
     st.markdown('</div>', unsafe_allow_html=True)  # card-content
@@ -110,13 +124,21 @@ if st.session_state["selected_event"]:
         first = st.text_input("First Name")
         last = st.text_input("Last Name")
         email = st.text_input("Email")
+        qty = st.number_input("Number of Tickets (Max 15)", min_value=1, max_value=15, value=1)
         submitted = st.form_submit_button("Confirm Purchase")
         if submitted:
-            uid = generate_uid()
-            save_ticket(uid, first, last, email, st.session_state["selected_event"])
-            add_block(uid, first, last, "buy")
-            send_ticket_email(email, first, last, uid, st.session_state["selected_event"])
-            st.success(f"Ticket purchased! UID: {uid}")
+            # Find selected event
+            selected_ev = next((e for e in EVENTS if e["name"]==st.session_state["selected_event"]), None)
+            if selected_ev and selected_ev["tickets_left"] >= qty:
+                for _ in range(qty):
+                    uid = generate_uid()
+                    save_ticket(uid, first, last, email, selected_ev["name"])
+                    add_block(uid, first, last, "buy")
+                    send_ticket_email(email, first, last, uid, selected_ev["name"])
+                selected_ev["tickets_left"] -= qty
+                st.success(f"{qty} tickets purchased! Event UID(s) sent to email.")
+            else:
+                st.error("Not enough tickets available!")
             st.session_state["selected_event"] = None
 
 # -------------------- CHECK-IN FORM --------------------
