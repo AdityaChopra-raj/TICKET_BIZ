@@ -1,10 +1,9 @@
 import streamlit as st
 from pathlib import Path
 from PIL import Image
-from ledger import add_transaction, get_ledger
 from events_data import EVENTS, ASSETS_DIR
+from ledger import add_transaction, get_ledger
 from email_utils import send_email
-from datetime import datetime
 import uuid
 
 st.set_page_config(page_title="Ticket_Biz", layout="wide")
@@ -139,7 +138,7 @@ if st.session_state.mode == "buy" and st.session_state.selected_event:
     if st.button("Confirm Purchase"):
         if all([first_name,last_name,student_id,email]):
             uid = str(uuid.uuid4())
-            add_transaction(event["name"], first_name, last_name, uid, num_tickets)
+            add_transaction(event["name"], first_name, last_name, uid, num_tickets, email)
             content = f"Hi {first_name},\n\nYou purchased {num_tickets} tickets for {event['name']}."
             send_email(email, f"Ticket_Biz Confirmation: {event['name']}", content)
             st.success(f"Purchase confirmed! UID: {uid}")
