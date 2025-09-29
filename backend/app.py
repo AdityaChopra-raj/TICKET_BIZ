@@ -70,7 +70,7 @@ def send_ticket_email(to_email, first, last, uid, event_name):
         return False, str(e)
 
 # -------------------- DISPLAY EVENTS --------------------
-st.markdown('<div class="horizontal-scroll">', unsafe_allow_html=True)
+st.markdown('<div class="grid-container">', unsafe_allow_html=True)
 for ev in EVENTS:
     dimmed_class = "dimmed" if st.session_state["selected_event"] and st.session_state["selected_event"] != ev["name"] else ""
     st.markdown(f'<div class="card {dimmed_class}">', unsafe_allow_html=True)
