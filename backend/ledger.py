@@ -1,35 +1,33 @@
-import csv, hashlib, os
+import csv, hashlib, uuid
 from datetime import datetime
+from pathlib import Path
 
-LEDGER_FILE = "ledger.csv"
+LEDGER_FILE = Path(__file__).parent / "ledger.csv"
 
-def _hash_block(index, timestamp, uid, first, last, action, prev_hash):
-    text = f"{index}{timestamp}{uid}{first}{last}{action}{prev_hash}"
-    return hashlib.sha256(text.encode()).hexdigest()
+def hash_block(prev_hash, uid, first, last, action, timestamp):
+    return hashlib.sha256(f"{prev_hash}{uid}{first}{last}{action}{timestamp}".encode()).hexdigest()
 
-def init_ledger():
-    if not os.path.exists(LEDGER_FILE):
-        with open(LEDGER_FILE, "w", newline="", encoding="utf-8") as f:
-            writer = csv.writer(f)
-            writer.writerow(["index","timestamp","uid","first_name","last_name","action","previous_hash","hash"])
-            genesis_hash = _hash_block(0,"genesis","0","0","0","genesis","0")
-            writer.writerow([0,"genesis","0","0","0","genesis","0",genesis_hash])
-
-def add_block(uid, first_name, last_name, action):
-    init_ledger()
-    with open(LEDGER_FILE, "r", newline="", encoding="utf-8") as f:
-        rows = list(csv.reader(f))
-    last = rows[-1]
-    prev_hash = last[-1]
-    index = int(last[0]) + 1
+def add_block(uid, first, last, action):
     timestamp = datetime.utcnow().isoformat()
-    h = _hash_block(index, timestamp, uid, first_name, last_name, action, prev_hash)
-    with open(LEDGER_FILE, "a", newline="", encoding="utf-8") as f:
-        writer = csv.writer(f)
-        writer.writerow([index, timestamp, uid, first_name, last_name, action, prev_hash, h])
-    return {"index": index, "timestamp": timestamp, "uid": uid, "first_name": first_name, "last_name": last_name, "action": action, "previous_hash": prev_hash, "hash": h}
+    prev_hash = ""
+    ledger_rows = []
+    if LEDGER_FILE.exists():
+        with open(LEDGER_FILE,"r",newline="",encoding="utf-8") as f:
+            reader = csv.DictReader(f)
+            ledger_rows = list(reader)
+            prev_hash = ledger_rows[-1]["hash"] if ledger_rows else ""
+    block_hash = hash_block(prev_hash, uid, first, last, action, timestamp)
+    row = {"index":len(ledger_rows)+1,"uid":uid,"first_name":first,"last_name":last,
+           "action":action,"timestamp":timestamp,"previous_hash":prev_hash,"hash":block_hash}
+    ledger_rows.append(row)
+    with open(LEDGER_FILE,"w",newline="",encoding="utf-8") as f:
+        writer = csv.DictWriter(f, fieldnames=row.keys())
+        writer.writeheader()
+        writer.writerows(ledger_rows)
+    return row
 
 def read_ledger():
-    init_ledger()
-    with open(LEDGER_FILE, "r", newline="", encoding="utf-8") as f:
-        return list(csv.DictReader(f))
+    if LEDGER_FILE.exists():
+        with open(LEDGER_FILE,"r",newline="",encoding="utf-8") as f:
+            return list(csv.DictReader(f))
+    return []
