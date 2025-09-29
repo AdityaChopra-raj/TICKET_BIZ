@@ -34,11 +34,18 @@ st.markdown(
     unsafe_allow_html=True
 )
 
-# -------------------- Center Buttons --------------------
-st.markdown('<div class="center-buttons">', unsafe_allow_html=True)
+# -------------------- Triangular Buttons --------------------
+st.markdown('<div class="triangle-buttons">', unsafe_allow_html=True)
+
+# Top row (one button)
+st.markdown('<div class="row">', unsafe_allow_html=True)
 if st.button("🎟 Buy Ticket", key="buy_button"):
     st.session_state.mode = "buy"
     st.session_state.selected_event = None
+st.markdown('</div>', unsafe_allow_html=True)
+
+# Bottom row (two buttons)
+st.markdown('<div class="row">', unsafe_allow_html=True)
 if st.button("✅ Check-In", key="checkin_button"):
     st.session_state.mode = "checkin"
     st.session_state.selected_event = None
@@ -47,6 +54,7 @@ if st.button("🔗 Blockchain", key="blockchain_button"):
     st.session_state.selected_event = None
 st.markdown('</div>', unsafe_allow_html=True)
 
+st.markdown('</div>', unsafe_allow_html=True)
 
 
 # -------------------- Image Resizing --------------------
