@@ -119,3 +119,40 @@ st.markdown(
     '<div class="footer">Ticket_Biz © 2025. Powered by <span>Blockchain Technology</span>.</div>',
     unsafe_allow_html=True
 )
+
+from PIL import Image
+
+def get_resized_image(image_path, target_width=320, target_height=180):
+    """
+    Opens an image and resizes/crops it to exact dimensions
+    while maintaining aspect ratio using 'cover' strategy.
+    """
+    try:
+        img = Image.open(image_path)
+    except:
+        # fallback to placeholder if image cannot be opened
+        img = Image.open(ASSETS_DIR / "placeholder.txt")
+
+    # Resize with cover
+    img_ratio = img.width / img.height
+    target_ratio = target_width / target_height
+
+    if img_ratio > target_ratio:
+        # Image is wider than target → crop sides
+        new_height = target_height
+        new_width = int(new_height * img_ratio)
+    else:
+        # Image is taller → crop top/bottom
+        new_width = target_width
+        new_height = int(new_width / img_ratio)
+
+    img = img.resize((new_width, new_height), Image.ANTIALIAS)
+
+    # Crop center
+    left = (new_width - target_width) / 2
+    top = (new_height - target_height) / 2
+    right = left + target_width
+    bottom = top + target_height
+    img = img.crop((left, top, right, bottom))
+
+    return img
