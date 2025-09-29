@@ -49,11 +49,11 @@ if st.session_state.mode == "checkin" and st.session_state.selected_event:
     event = st.session_state.selected_event
     st.markdown(f'<h2 class="section-title">Check-In for {event["name"]}</h2>', unsafe_allow_html=True)
     
-    check_uid = st.text_input("Enter Ticket UID")
-    email = st.text_input("Enter Email")
-    num_checkin = st.number_input("Number of People Checking In", min_value=1, max_value=15, value=1)
+    check_uid = st.text_input("Enter Ticket UID", key="checkin_uid")
+    email = st.text_input("Enter Email", key="checkin_email")
+    num_checkin = st.number_input("Number of People Checking In", min_value=1, max_value=15, value=1, key="checkin_count")
 
-    if st.button("Confirm Check-In"):
+    if st.button("Confirm Check-In", key="confirm_checkin"):
         ledger_records = get_ledger()
         for record in ledger_records:
             if record["uid"] == check_uid and record["email"] == email:
@@ -67,6 +67,7 @@ if st.session_state.mode == "checkin" and st.session_state.selected_event:
                 break
         else:
             st.warning("No matching ticket found!")
+
 
 
 # -------------------- Image Resizing --------------------
