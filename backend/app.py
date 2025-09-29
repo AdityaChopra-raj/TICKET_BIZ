@@ -59,7 +59,10 @@ if st.session_state.mode and st.session_state.selected_event is None:
             img_path = ASSETS_DIR / event["image"]
             if not img_path.exists():
                 img_path = ASSETS_DIR / "placeholder.txt"
-            st.markdown(f'<img src="{img_path}" class="card-image">', unsafe_allow_html=True)
+                resized_img = get_resized_image(img_path)
+                resized_img.save(ASSETS_DIR / "temp_display_image.png")
+                st.image(str(ASSETS_DIR / "temp_display_image.png"), use_container_width=True)
+
 
             st.markdown('<div class="card-content">', unsafe_allow_html=True)
             st.markdown(f'<div class="card-title">{event["name"]}</div>', unsafe_allow_html=True)
