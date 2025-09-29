@@ -48,6 +48,7 @@ if st.button("🔗 Blockchain", key="blockchain_button"):
 st.markdown('</div>', unsafe_allow_html=True)
 
 
+
 # -------------------- Image Resizing --------------------
 def get_resized_image(image_path, target_width=320, target_height=180):
     try:
