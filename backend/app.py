@@ -74,6 +74,16 @@ if st.session_state.mode and st.session_state.selected_event is None:
             st.markdown('</div></div>', unsafe_allow_html=True)
     st.markdown('</div>', unsafe_allow_html=True)
 
+# -------------------- Show Blockchain Ledger --------------------
+if st.session_state.mode == "blockchain":
+    st.markdown("<h2 style='text-align:center;color:#e50914;'>Blockchain Ledger Records</h2>", unsafe_allow_html=True)
+    ledger = get_ledger()
+    if ledger:
+        st.table(ledger)  # Simple table view
+    else:
+        st.info("No blockchain records yet.")
+
+
 # -------------------- Selected Event --------------------
 if st.session_state.selected_event:
     event = next(e for e in EVENTS if e["name"] == st.session_state.selected_event)
