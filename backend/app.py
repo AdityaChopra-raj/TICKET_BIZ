@@ -1,12 +1,11 @@
 import streamlit as st
 from PIL import Image
-import os, uuid, io, csv, smtplib
+import os, uuid, csv, smtplib
 from email.message import EmailMessage
 from datetime import datetime
 from events_data import EVENTS
 from ledger import add_block, read_ledger, init_ledger
 from pathlib import Path
-import qrcode
 
 st.set_page_config(page_title="TicketBiz Clone", layout="wide")
 BASE_DIR = Path(__file__).parent
@@ -28,17 +27,7 @@ local_css(BASE_DIR / "styles/style.css")
 def generate_uid():
     return uuid.uuid4().hex[:10].upper()
 
-def generate_qr_image(data_str):
-    qr = qrcode.QRCode(box_size=6, border=2)
-    qr.add_data(data_str)
-    qr.make(fit=True)
-    img = qr.make_image(fill_color="black", back_color="white")
-    buf = io.BytesIO()
-    img.save(buf, format="PNG")
-    buf.seek(0)
-    return buf
-
-def send_ticket_email(to_email, first_name, last_name, uid, event_name, qr_bytes_io):
+def send_ticket_email(to_email, first_name, last_name, uid, event_name):
     try:
         email_conf = st.secrets.get("email", None)
         if not email_conf:
@@ -48,10 +37,7 @@ def send_ticket_email(to_email, first_name, last_name, uid, event_name, qr_bytes
         msg["Subject"] = f"Your ticket for {event_name}"
         msg["From"] = email_conf["address"]
         msg["To"] = to_email
-        msg.set_content(f"Hi {first_name} {last_name},\n\nHere is your ticket UID: {uid}\nEvent: {event_name}\n\nShow this QR at check-in.\n\n— TicketBiz Clone")
-
-        qr_bytes = qr_bytes_io.getvalue()
-        msg.add_attachment(qr_bytes, maintype="image", subtype="png", filename=f"{uid}.png")
+        msg.set_content(f"Hi {first_name} {last_name},\n\nHere is your ticket UID: {uid}\nEvent: {event_name}\n\nShow this UID at check-in.\n\n— TicketBiz Clone")
 
         s = smtplib.SMTP_SSL(email_conf.get("smtp_host","smtp.gmail.com"), int(email_conf.get("smtp_port",465)))
         s.login(email_conf["address"], email_conf["password"])
@@ -136,11 +122,9 @@ if st.session_state["buy_event"]:
                 uid = generate_uid()
                 save_ticket_record(uid, first, last, email, ev_name)
                 add_block(uid, first, last, "buy")
-                qr_buf = generate_qr_image(f"{uid}|{ev_name}")
-                ok, err = send_ticket_email(email, first, last, uid, ev_name, qr_buf)
+                ok, err = send_ticket_email(email, first, last, uid, ev_name)
                 if ok: st.success(f"Ticket purchased! UID: {uid}. Email sent to {email}")
                 else: st.warning(f"Ticket purchased (email failed): {err}")
-                st.image(qr_buf)
                 st.session_state["show_checkin"] = True
                 st.session_state["show_ledger"] = True
 
@@ -148,7 +132,7 @@ if st.session_state["buy_event"]:
 if st.session_state["show_checkin"]:
     st.markdown("---")
     st.header("✅ Check-in / Verify Ticket")
-    uid_input = st.text_input("Enter ticket UID or scan QR", key="check_uid")
+    uid_input = st.text_input("Enter ticket UID", key="check_uid")
     if st.button("Check In"):
         if not uid_input:
             st.error("Enter a UID")
@@ -165,7 +149,7 @@ if st.session_state["show_checkin"]:
                             else:
                                 mark_checked_in(uid_input)
                                 add_block(uid_input, r["first_name"], r["last_name"], "check-in")
-                                ok, err = send_ticket_email(r["email"], r["first_name"], r["last_name"], uid_input, r["event"], generate_qr_image(f"{uid_input}|{r['event']}"))
+                                ok, err = send_ticket_email(r["email"], r["first_name"], r["last_name"], uid_input, r["event"])
                                 if ok: st.success("Check-in successful, confirmation email sent.")
                                 else: st.success("Check-in successful, email failed")
                             break
