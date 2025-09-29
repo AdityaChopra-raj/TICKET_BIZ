@@ -7,7 +7,7 @@ from datetime import datetime
 
 st.set_page_config(page_title="Ticket_Biz", layout="wide")
 
-# Load CSS
+# -------------------- Load CSS --------------------
 with open(Path(__file__).parent / "styles.css") as f:
     st.markdown(f"<style>{f.read()}</style>", unsafe_allow_html=True)
 
@@ -50,8 +50,7 @@ with c2:
             st.session_state.mode = "blockchain"
             st.session_state.selected_event = None
 st.markdown('</div>', unsafe_allow_html=True)
-else:
-        st.info("No blockchain records yet.")
+
 # -------------------- Image Resizing --------------------
 def get_resized_image(image_path, target_width=320, target_height=480):
     try:
@@ -116,39 +115,35 @@ if st.session_state.selected_event:
     st.markdown(f"<h2 style='text-align:center;color:#e50914;'>{event['name']}</h2>", unsafe_allow_html=True)
     st.write(event["description"])
 
-if st.session_state.mode == "buy":
-    st.markdown("### Buy Tickets")
-    
-    # Collect customer info
-    first_name = st.text_input("First Name")
-    last_name = st.text_input("Last Name")
-    student_id = st.text_input("Student ID")
-    email = st.text_input("Email Address")
-    
-    max_tickets = min(15, event["available_tickets"])
-    qty = st.number_input("Number of tickets", min_value=1, max_value=max_tickets, value=1)
-    
-    if st.button("Confirm Purchase"):
-        if not all([first_name, last_name, student_id, email]):
-            st.error("Please fill in all required fields!")
-        elif qty > event["available_tickets"]:
-            st.error("Not enough tickets available.")
-        else:
-            event["available_tickets"] -= qty
-            # Record transaction with all info
-            add_transaction(
-                event["name"],
-                email,
-                qty,
-                datetime.now(),
-                first_name=first_name,
-                last_name=last_name,
-                student_id=student_id
-            )
-            st.success(f"Purchased {qty} ticket(s) for {event['name']}")
-
-            else:
+    if st.session_state.mode == "buy":
+        st.markdown("### Buy Tickets")
+        
+        # Customer info
+        first_name = st.text_input("First Name")
+        last_name = st.text_input("Last Name")
+        student_id = st.text_input("Student ID")
+        email = st.text_input("Email Address")
+        
+        max_tickets = min(15, event["available_tickets"])
+        qty = st.number_input("Number of tickets", min_value=1, max_value=max_tickets, value=1)
+        
+        if st.button("Confirm Purchase"):
+            if not all([first_name, last_name, student_id, email]):
+                st.error("Please fill in all required fields!")
+            elif qty > event["available_tickets"]:
                 st.error("Not enough tickets available.")
+            else:
+                event["available_tickets"] -= qty
+                add_transaction(
+                    event["name"],
+                    email,
+                    qty,
+                    datetime.now(),
+                    first_name=first_name,
+                    last_name=last_name,
+                    student_id=student_id
+                )
+                st.success(f"Purchased {qty} ticket(s) for {event['name']}")
 
     elif st.session_state.mode == "checkin":
         st.markdown("### Venue Check-In")
@@ -161,7 +156,7 @@ if st.session_state.mode == "buy":
                 None
             )
             if record:
-                if event["check_ins"] + 1 <= record["tickets_bought"]:
+                if event["check_ins"] + 1 <= int(record["tickets_bought"]):
                     event["check_ins"] += 1
                     st.success(f"Check-In Successful ✅ ({event['check_ins']} checked in)")
                 else:
@@ -174,7 +169,19 @@ if st.session_state.mode == "blockchain":
     st.markdown("<h2 style='text-align:center;color:#e50914;'>Blockchain Ledger Records</h2>", unsafe_allow_html=True)
     ledger = get_ledger()
     if ledger:
-        st.table(ledger)
+        st.markdown('<div class="event-grid">', unsafe_allow_html=True)
+        for record in ledger:
+            st.markdown('<div class="event-card">', unsafe_allow_html=True)
+            st.markdown('<div class="card-content">', unsafe_allow_html=True)
+            st.markdown(f"<b>Event:</b> {record['event']}<br>", unsafe_allow_html=True)
+            st.markdown(f"<b>Name:</b> {record['first_name']} {record['last_name']}<br>", unsafe_allow_html=True)
+            st.markdown(f"<b>Student ID:</b> {record['student_id']}<br>", unsafe_allow_html=True)
+            st.markdown(f"<b>Email:</b> {record['email']}<br>", unsafe_allow_html=True)
+            st.markdown(f"<b>Tickets Bought:</b> {record['tickets_bought']}<br>", unsafe_allow_html=True)
+            st.markdown(f"<b>Ticket UID:</b> {record['ticket_uid']}<br>", unsafe_allow_html=True)
+            st.markdown(f"<b>Timestamp:</b> {record['timestamp']}<br>", unsafe_allow_html=True)
+            st.markdown('</div></div>', unsafe_allow_html=True)
+        st.markdown('</div>', unsafe_allow_html=True)
     else:
         st.info("No blockchain records yet.")
 
