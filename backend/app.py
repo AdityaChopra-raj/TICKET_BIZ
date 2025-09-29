@@ -58,7 +58,13 @@ event_obj = next((e for e in EVENTS_DATA if e["name"] == selected_event), None)
 if event_obj:
     if os.path.exists(event_obj["image"]):
         img = Image.open(event_obj["image"])
-        st.image(img, use_column_width=True)
+        # Resize to 16:9 landscape if needed
+        width, height = img.size
+        target_width = width
+        target_height = int(width * 9 / 16)
+        if height != target_height:
+            img = img.resize((target_width, target_height))
+        st.image(img, use_container_width=True)
 
     st.markdown(f"""
     <div class="card">
