@@ -7,7 +7,7 @@ from events_data import EVENTS
 from ledger import add_block, read_ledger, init_ledger
 from pathlib import Path
 
-st.set_page_config(page_title="TicketBiz ", layout="wide")
+st.set_page_config(page_title="TicketBiz Clone", layout="wide")
 BASE_DIR = Path(__file__).parent
 ASSETS_DIR = BASE_DIR / "assets"
 TICKETS_CSV = BASE_DIR / "tickets.csv"
@@ -82,9 +82,10 @@ if "show_ledger" not in st.session_state:
     st.session_state["show_ledger"] = False
 
 # Title
-st.title("🎟 TicketBiz App")
+st.title("🎟 TicketBiz Clone — Single Page App")
 st.markdown("Browse events, buy tickets, check-in, and see blockchain ledger.")
 
+# --- Events Section (Horizontal Scroll) ---
 st.header("🎬 Events")
 st.markdown('<div class="horizontal-scroll">', unsafe_allow_html=True)
 
@@ -107,8 +108,7 @@ for ev in EVENTS:
 
 st.markdown('</div>', unsafe_allow_html=True)
 
-
-# Buy form
+# --- Buy Ticket Form ---
 if st.session_state["buy_event"]:
     ev_name = st.session_state["buy_event"]
     st.markdown("---")
@@ -134,7 +134,7 @@ if st.session_state["buy_event"]:
                 st.session_state["show_checkin"] = True
                 st.session_state["show_ledger"] = True
 
-# Check-in
+# --- Check-in Section ---
 if st.session_state["show_checkin"]:
     st.markdown("---")
     st.header("✅ Check-in / Verify Ticket")
@@ -162,7 +162,7 @@ if st.session_state["show_checkin"]:
             if not found:
                 st.error("Ticket UID not found.")
 
-# Ledger
+# --- Blockchain Ledger ---
 if st.session_state["show_ledger"]:
     st.markdown("---")
     st.header("🔗 Blockchain Ledger (Admin)")
