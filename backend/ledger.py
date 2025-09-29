@@ -1,23 +1,23 @@
-import csv, hashlib, datetime
-from pathlib import Path
+import hashlib
+import time
 
-LEDGER_CSV = Path(__file__).parent / "ledger.csv"
+class BlockchainLedger:
+    def __init__(self):
+        self.chain = []
 
-def add_block(uid, first, last, action):
-    ledger = read_ledger()
-    index = len(ledger)
-    prev_hash = ledger[-1]["hash"] if ledger else "0"*64
-    timestamp = datetime.datetime.utcnow().isoformat()
-    raw = f"{index}{uid}{first}{last}{action}{timestamp}{prev_hash}".encode()
-    block_hash = hashlib.sha256(raw).hexdigest()
-    row = {"index":index,"uid":uid,"first":first,"last":last,"action":action,"timestamp":timestamp,"hash":block_hash,"prev_hash":prev_hash}
-    with open(LEDGER_CSV,"a",newline="",encoding="utf-8") as f:
-        writer = csv.DictWriter(f, fieldnames=row.keys())
-        if f.tell()==0:
-            writer.writeheader()
-        writer.writerow(row)
+    def _hash(self, block):
+        return hashlib.sha256(str(block).encode()).hexdigest()
 
-def read_ledger():
-    if not LEDGER_CSV.exists(): return []
-    with open(LEDGER_CSV,"r",newline="",encoding="utf-8") as f:
-        return list(csv.DictReader(f))
+    def add_record(self, event_id, buyer_name, tickets_bought):
+        block = {
+            "timestamp": time.strftime("%Y-%m-%d %H:%M:%S"),
+            "event_id": event_id,
+            "buyer": buyer_name,
+            "tickets_bought": tickets_bought,
+            "prev_hash": self._hash(self.chain[-1]) if self.chain else "GENESIS",
+        }
+        block["hash"] = self._hash(block)
+        self.chain.append(block)
+
+    def all_records(self):
+        return self.chain
