@@ -1,23 +1,40 @@
 import hashlib
-import time
+from datetime import datetime
 
-class BlockchainLedger:
-    def __init__(self):
-        self.chain = []
+# In-memory ledger list
+ledger = []
 
-    def _hash(self, block):
-        return hashlib.sha256(str(block).encode()).hexdigest()
+def add_transaction(event_name: str, email: str, tickets_bought: int, timestamp: datetime):
+    """
+    Add a new transaction to the ledger.
 
-    def add_record(self, event_id, buyer_name, tickets_bought):
-        block = {
-            "timestamp": time.strftime("%Y-%m-%d %H:%M:%S"),
-            "event_id": event_id,
-            "buyer": buyer_name,
-            "tickets_bought": tickets_bought,
-            "prev_hash": self._hash(self.chain[-1]) if self.chain else "GENESIS",
-        }
-        block["hash"] = self._hash(block)
-        self.chain.append(block)
+    Args:
+        event_name (str): Name of the event.
+        email (str): Buyer email address.
+        tickets_bought (int): Number of tickets purchased.
+        timestamp (datetime): Time of purchase.
+    """
+    record = {
+        "event_name": event_name,
+        "email": email,
+        "tickets_bought": tickets_bought,
+        "timestamp": str(timestamp)
+    }
 
-    def all_records(self):
-        return self.chain
+    # Create a simple blockchain-style hash of the record
+    record_string = f"{record['event_name']}{record['email']}{record['tickets_bought']}{record['timestamp']}"
+    record_hash = hashlib.sha256(record_string.encode()).hexdigest()
+
+    record["hash"] = record_hash
+
+    ledger.append(record)
+
+
+def get_ledger():
+    """
+    Retrieve the entire ledger.
+
+    Returns:
+        list[dict]: All ledger records.
+    """
+    return ledger
