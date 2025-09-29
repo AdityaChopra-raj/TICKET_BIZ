@@ -1,92 +1,129 @@
-
----
-
-## 📄 `backend/app.py`
-```python
 import streamlit as st
-import pandas as pd
-import os
+from PIL import Image
+from pathlib import Path
+import csv, uuid
 from datetime import datetime
+import smtplib
+from email.message import EmailMessage
 
-# Paths
-DATA_DIR = "backend/data"
-ASSETS_DIR = "backend/assets"
+from events_data import EVENTS
+from ledger import add_block, read_ledger
 
-EVENTS_FILE = os.path.join(DATA_DIR, "events.csv")
-TICKETS_FILE = os.path.join(DATA_DIR, "tickets.csv")
-LEDGER_FILE = os.path.join(DATA_DIR, "ledger.csv")
-STYLE_FILE = os.path.join("backend", "style.css")
+BASE_DIR = Path(__file__).parent
+ASSETS_DIR = BASE_DIR / "assets"
+TICKETS_CSV = BASE_DIR / "tickets.csv"
+
+# Streamlit config
+st.set_page_config(page_title="Ticket_Biz", layout="wide")
 
 # Load CSS
-with open(STYLE_FILE) as f:
-    st.markdown(f"<style>{f.read()}</style>", unsafe_allow_html=True)
+def local_css(file_name):
+    with open(file_name) as f:
+        st.markdown(f"<style>{f.read()}</style>", unsafe_allow_html=True)
+local_css(BASE_DIR / "styles.css")
 
-# Load data
-events_df = pd.read_csv(EVENTS_FILE)
-tickets_df = pd.read_csv(TICKETS_FILE)
-ledger_df = pd.read_csv(LEDGER_FILE)
+# Session state
+if "buy_event" not in st.session_state: st.session_state["buy_event"] = None
 
-# Page title
-st.markdown("<h1 style='text-align:center; margin-bottom:30px;'>🎉 Trending Events</h1>", unsafe_allow_html=True)
+# HEADER
+st.markdown('<h1 class="header-title">🎟 Ticket_Biz — Event Ticketing</h1>', unsafe_allow_html=True)
+st.markdown('<p class="header-subtitle">Browse, buy, and check-in securely with blockchain verification</p>', unsafe_allow_html=True)
 
-# Layout for event cards
+# ------------------ HELPER FUNCTIONS ------------------
+def generate_uid(): return uuid.uuid4().hex[:10].upper()
+
+def save_ticket(uid, first, last, email, event_name):
+    exists = TICKETS_CSV.exists()
+    with open(TICKETS_CSV,"a",newline="",encoding="utf-8") as f:
+        writer = csv.writer(f)
+        if not exists:
+            writer.writerow(["uid","first_name","last_name","email","event","purchased_at","checked_in"])
+        writer.writerow([uid, first, last, email, event_name, datetime.utcnow().isoformat(),""])
+
+def mark_checked_in(uid):
+    if not TICKETS_CSV.exists(): return False
+    rows = []
+    with open(TICKETS_CSV,"r",newline="",encoding="utf-8") as f:
+        reader = csv.DictReader(f)
+        for r in reader:
+            if r["uid"] == uid:
+                r["checked_in"] = datetime.utcnow().isoformat()
+            rows.append(r)
+    with open(TICKETS_CSV,"w",newline="",encoding="utf-8") as f:
+        writer = csv.DictWriter(f, fieldnames=["uid","first_name","last_name","email","event","purchased_at","checked_in"])
+        writer.writeheader()
+        writer.writerows(rows)
+    return True
+
+def send_ticket_email(to_email, first, last, uid, event_name):
+    try:
+        email_conf = st.secrets["email"]
+        msg = EmailMessage()
+        msg["Subject"] = f"Ticket Confirmation: {event_name}"
+        msg["From"] = email_conf["address"]
+        msg["To"] = to_email
+        msg.set_content(f"Hi {first} {last},\n\nYour ticket UID: {uid}\nEvent: {event_name}\n\nShow this at check-in.\n\n— Ticket_Biz")
+        s = smtplib.SMTP_SSL(email_conf.get("smtp_host","smtp.gmail.com"), int(email_conf.get("smtp_port",465)))
+        s.login(email_conf["address"], email_conf["password"])
+        s.send_message(msg)
+        s.quit()
+        return True, None
+    except Exception as e:
+        return False, str(e)
+
+# ------------------ DISPLAY EVENTS ------------------
 st.markdown('<div class="horizontal-scroll">', unsafe_allow_html=True)
+for ev in EVENTS:
+    with st.container():
+        st.markdown('<div class="card">', unsafe_allow_html=True)
+        try: img = Image.open(ASSETS_DIR / ev["image"])
+        except: img = Image.open(ASSETS_DIR / "placeholder.txt")
+        st.image(img, use_column_width=True)
+        st.markdown('<div class="status-badge">Available</div>', unsafe_allow_html=True)
+        st.markdown('<div class="card-content">', unsafe_allow_html=True)
+        st.markdown(f'<div class="card-title">{ev["name"]}</div>', unsafe_allow_html=True)
+        st.markdown(f'<div class="card-desc">{ev["desc"]}</div>', unsafe_allow_html=True)
+        st.markdown('<div class="card-details">', unsafe_allow_html=True)
+        st.markdown(f'<span>📅 {ev.get("date","TBD")}</span>', unsafe_allow_html=True)
+        st.markdown(f'<span>📍 {ev.get("location","Online")}</span>', unsafe_allow_html=True)
+        st.markdown(f'<span>🎟️ Tickets left: <span class="important">{ev.get("tickets_left",100)}</span></span>', unsafe_allow_html=True)
+        st.markdown(f'<span>💰 Price: ₹{ev.get("price",100)}</span>', unsafe_allow_html=True)
+        st.markdown('</div>', unsafe_allow_html=True)  # card-details
 
-for idx, row in events_df.iterrows():
-    event_id = row["id"]
-    name = row["name"]
-    desc = row["description"]
-    date = row["date"]
-    location = row["location"]
-    tickets_left = row["tickets_left"]
-    price = row["price"]
-    image = os.path.join(ASSETS_DIR, row["image"])
+        if st.button("Book Now", key=f"buy_{ev['name']}"):
+            st.session_state["buy_event"] = ev["name"]
+        st.markdown('</div>', unsafe_allow_html=True)  # card-content
+        st.markdown('</div>', unsafe_allow_html=True)  # card
+st.markdown('</div>', unsafe_allow_html=True)
 
-    # Card
-    st.markdown(f"""
-    <div class="card">
-        <img src="{image}" alt="{name}">
-        <div class="badge">Available</div>
-        <div class="card-content">
-            <h3>{name}</h3>
-            <p>{desc[:100]}...</p>
-            <div class="details">
-                <span>📅 {date}</span>
-                <span>📍 {location}</span>
-                <span>🎟️ {tickets_left} tickets left</span>
-                <span>💰 {price}</span>
-            </div>
-        </div>
-    </div>
-    """, unsafe_allow_html=True)
+# ------------------ PURCHASE FORM ------------------
+if st.session_state["buy_event"]:
+    st.subheader(f"Booking: {st.session_state['buy_event']}")
+    with st.form("purchase_form"):
+        first = st.text_input("First Name")
+        last = st.text_input("Last Name")
+        email = st.text_input("Email")
+        submitted = st.form_submit_button("Confirm Purchase")
+        if submitted:
+            uid = generate_uid()
+            save_ticket(uid, first, last, email, st.session_state["buy_event"])
+            add_block(uid, first, last, "buy")
+            send_ticket_email(email, first, last, uid, st.session_state["buy_event"])
+            st.success(f"Ticket purchased! UID: {uid}")
+            st.session_state["buy_event"] = None
 
-    # Booking button
-    if st.button(f"Book Now ({name})", key=event_id, help="Reserve your ticket"):
-        if tickets_left > 0:
-            # Update tickets
-            events_df.loc[events_df["id"] == event_id, "tickets_left"] -= 1
-            events_df.to_csv(EVENTS_FILE, index=False)
+# ------------------ CHECK-IN FORM ------------------
+st.subheader("Check-in")
+with st.form("checkin_form"):
+    uid_input = st.text_input("Enter your UID")
+    checked_in = st.form_submit_button("Check-In")
+    if checked_in and uid_input:
+        mark_checked_in(uid_input)
+        add_block(uid_input, "N/A", "N/A", "checkin")
+        st.success(f"UID {uid_input} checked in successfully!")
 
-            # Add to tickets file
-            new_ticket = {"event_id": event_id, "timestamp": datetime.now()}
-            tickets_df = pd.concat([tickets_df, pd.DataFrame([new_ticket])], ignore_index=True)
-            tickets_df.to_csv(TICKETS_FILE, index=False)
-
-            # Add to ledger
-            new_ledger = {"event_id": event_id, "status": "booked", "timestamp": datetime.now()}
-            ledger_df = pd.concat([ledger_df, pd.DataFrame([new_ledger])], ignore_index=True)
-            ledger_df.to_csv(LEDGER_FILE, index=False)
-
-            st.success(f"🎟️ Ticket booked for {name}!")
-        else:
-            st.error("❌ No tickets left for this event.")
-
-st.markdown("</div>", unsafe_allow_html=True)
-
-# Footer
-st.markdown("""
-<div class="footer">
-    <p><strong>Ticket_Biz</strong> © 2025. All rights reserved.<br>
-    Powered by Blockchain Technology | Developer Use Only</p>
-</div>
-""", unsafe_allow_html=True)
+# ------------------ LEDGER ------------------
+st.subheader("Blockchain Ledger")
+ledger_rows = read_ledger()
+for block in ledger_rows[-20:]:
+    st.markdown(f"Index: {block['index']} | UID: {block['uid']} | Action: {block['action']} | Timestamp: {block['timestamp']} | Hash: {block['hash']}")
