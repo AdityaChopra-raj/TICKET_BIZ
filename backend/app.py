@@ -1,97 +1,84 @@
 import streamlit as st
-from events_data import events as EVENTS_DATA
-from verify_ticket import verify_ticket
 from PIL import Image
 import os
+from events_data import events as EVENTS_DATA
 
-# Page config
-st.set_page_config(page_title="Event Ticketing System", layout="wide")
+st.set_page_config(page_title="Event Ticketing", layout="wide")
 
-# Inject custom CSS for hover effects & button transitions
-st.markdown("""
-<style>
-/* Card hover effect */
-.card {
-    transition: transform 0.3s ease, box-shadow 0.3s ease;
-    border-radius: 12px;
-    overflow: hidden;
-    box-shadow: 0 2px 6px rgba(0,0,0,0.2);
-    padding: 10px;
-    margin-bottom: 20px;
-}
-.card:hover {
-    transform: scale(1.03);
-    box-shadow: 0 10px 20px rgba(0,0,0,0.3);
-}
+# Load CSS
+def local_css(file_name):
+    try:
+        with open(file_name) as f:
+            st.markdown(f"<style>{f.read()}</style>", unsafe_allow_html=True)
+    except Exception as e:
+        st.warning(f"CSS file not loaded: {e}")
 
-/* Button style and hover */
-.stButton>button {
-    background-color: #e50914;
-    color: white;
-    border-radius: 8px;
-    padding: 0.5rem 1.5rem;
-    font-size: 16px;
-    font-weight: bold;
-    transition: transform 0.2s ease, background-color 0.2s ease;
-}
-.stButton>button:hover {
-    transform: scale(1.05);
-    background-color: #f6121d;
-}
+local_css("styles/style.css")
 
-/* Progress bar customization */
-[data-testid="stProgressBar"] > div > div > div {
-    background-color: #e50914 !important;
-}
-</style>
-""", unsafe_allow_html=True)
+# Load email credentials safely
+try:
+    EMAIL_ADDRESS = st.secrets["email"]["address"]
+    EMAIL_PASSWORD = st.secrets["email"]["password"]
+except KeyError:
+    EMAIL_ADDRESS = None
+    EMAIL_PASSWORD = None
+    st.warning("Email credentials not found. Email features disabled.")
 
-# Title
-st.title("🎫 Event Ticketing System")
+# Helper function to safely load images
+def load_image(path, fallback="assets/placeholder.jpeg"):
+    try:
+        return Image.open(path)
+    except Exception as e:
+        st.error(f"Failed to load image: {path}. Using placeholder.")
+        try:
+            return Image.open(fallback)
+        except:
+            return None
+
+# --- UI --- #
+st.title("🎬 Event Ticketing System")
+st.subheader("Scan and Verify Tickets Easily")
 
 # Event selection dropdown
-event_names = [event['name'] for event in EVENTS_DATA]
+event_names = [event["name"] for event in EVENTS_DATA]
 selected_event = st.selectbox("Select Event", event_names)
 
-# Event card with image and stats
-event_obj = next((e for e in EVENTS_DATA if e["name"] == selected_event), None)
-if event_obj:
-    if os.path.exists(event_obj["image"]):
-        img = Image.open(event_obj["image"])
-        # Resize to 16:9 landscape if needed
-        width, height = img.size
-        target_width = width
-        target_height = int(width * 9 / 16)
-        if height != target_height:
-            img = img.resize((target_width, target_height))
-        st.image(img, use_container_width=True)
-
-    st.markdown(f"""
-    <div class="card">
-        <h3>{selected_event}</h3>
-        <p>Tickets Scanned: {event_obj['tickets_scanned']} / {event_obj['total_tickets']}</p>
-    </div>
-    """, unsafe_allow_html=True)
+# Display event image
+event_image_path = next((event["image"] for event in EVENTS_DATA if event["name"] == selected_event), None)
+img = load_image(event_image_path)
+if img:
+    st.image(img, use_container_width=True)
 
 # Ticket input
-ticket_id = st.text_input("Enter Ticket ID or Scan QR")
+ticket_number = st.text_input("Enter Ticket Number", placeholder="e.g., NAV001")
 
-# Verify button
-if st.button("Verify Ticket"):
-    if not ticket_id:
-        st.warning("Please enter a Ticket ID")
-    else:
-        valid, message = verify_ticket(ticket_id, selected_event, EVENTS_DATA)
-        if valid:
-            st.success(message)
+# Verify ticket button inside a card
+with st.container():
+    st.markdown('<div class="card">', unsafe_allow_html=True)
+    if st.button("Verify Ticket"):
+        if not ticket_number.strip():
+            st.error("Please enter a ticket number.")
         else:
-            st.error(message)
+            try:
+                event = next((e for e in EVENTS_DATA if e["name"] == selected_event), None)
+                if ticket_number in event["tickets"]:
+                    if ticket_number in event["scanned_tickets"]:
+                        st.warning("This ticket has already been scanned.")
+                    else:
+                        event["scanned_tickets"].append(ticket_number)
+                        st.success("✅ Ticket Verified Successfully!")
+                else:
+                    st.error("Ticket not found for this event.")
+            except Exception as e:
+                st.error(f"Error during verification: {e}")
+    st.markdown('</div>', unsafe_allow_html=True)
 
-# Progress bar for ticket scanning
-if event_obj:
-    progress_value = event_obj["tickets_scanned"]/event_obj["total_tickets"]
-    st.progress(progress_value)
-
-# Footer
-st.markdown("---")
-st.markdown("© 2025 Event Ticketing System | Streamlit Version ✅")
+# Display event stats in cards
+st.markdown("### 📊 Event Ticket Stats")
+try:
+    for event in EVENTS_DATA:
+        scanned = len(event.get("scanned_tickets", []))
+        total = len(event.get("tickets", []))
+        st.markdown(f'<div class="card">{event["name"]}: {scanned}/{total} tickets scanned</div>', unsafe_allow_html=True)
+except Exception as e:
+    st.error(f"Error loading stats: {e}")
