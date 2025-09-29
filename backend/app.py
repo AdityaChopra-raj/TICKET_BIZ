@@ -21,7 +21,7 @@ def get_resized_image(image_path, width=320, height=180):
     img = Image.open(image_path)
     return img.resize((width, height))
 
-def show_event_card(event):
+def show_event_card(event, scope_id=""):
     st.image(get_resized_image(ASSETS_DIR / event["image"]), use_container_width=True)
 
     # Availability badge below the image
@@ -53,15 +53,17 @@ def show_event_card(event):
         </div>
     ''', unsafe_allow_html=True)
 
-    # Buttons under card
+    # Buttons under card with unique keys
     col1, col2 = st.columns([1,1])
     with col1:
-        if st.button("Buy Ticket", key=f"buy_btn_{event['id']}"):
+        buy_key = f"buy_btn_{event['id']}_{scope_id}"
+        if st.button("Buy Ticket", key=buy_key):
             st.session_state.selected_event = event["id"]
             st.session_state.mode = "buy"
             st.experimental_rerun()
     with col2:
-        if st.button("Check-In", key=f"checkin_btn_{event['id']}"):
+        checkin_key = f"checkin_btn_{event['id']}_{scope_id}"
+        if st.button("Check-In", key=checkin_key):
             st.session_state.selected_event = event["id"]
             st.session_state.mode = "checkin"
             st.experimental_rerun()
@@ -69,12 +71,19 @@ def show_event_card(event):
     # Buy Ticket Form
     if st.session_state.mode == "buy" and st.session_state.selected_event == event["id"] and event["available_tickets"] > 0:
         st.markdown('<hr style="border-color:#222;">', unsafe_allow_html=True)
-        first_name = st.text_input("First Name", key=f"first_{event['id']}")
-        last_name = st.text_input("Last Name", key=f"last_{event['id']}")
-        uid = st.text_input("Student ID / UID", key=f"uid_{event['id']}")
-        email = st.text_input("Email", key=f"email_{event['id']}")
-        num_tickets = st.number_input("Number of Tickets", min_value=1, max_value=min(15, event["available_tickets"]), value=1, key=f"num_{event['id']}")
-        if st.button("Confirm Purchase", key=f"confirm_buy_{event['id']}"):
+        first_name = st.text_input("First Name", key=f"first_{event['id']}_{scope_id}")
+        last_name = st.text_input("Last Name", key=f"last_{event['id']}_{scope_id}")
+        uid = st.text_input("Student ID / UID", key=f"uid_{event['id']}_{scope_id}")
+        email = st.text_input("Email", key=f"email_{event['id']}_{scope_id}")
+        num_tickets = st.number_input(
+            "Number of Tickets",
+            min_value=1,
+            max_value=min(15, event["available_tickets"]),
+            value=1,
+            key=f"num_{event['id']}_{scope_id}"
+        )
+        confirm_buy_key = f"confirm_buy_{event['id']}_{scope_id}"
+        if st.button("Confirm Purchase", key=confirm_buy_key):
             if not all([first_name, last_name, uid, email]):
                 st.warning("Please fill all details.")
             else:
@@ -86,10 +95,11 @@ def show_event_card(event):
     # Check-In Form
     if st.session_state.mode == "checkin" and st.session_state.selected_event == event["id"]:
         st.markdown('<hr style="border-color:#222;">', unsafe_allow_html=True)
-        check_uid = st.text_input("Enter Ticket UID", key=f"checkin_uid_{event['id']}")
-        email = st.text_input("Enter Email", key=f"checkin_email_{event['id']}")
-        num_checkin = st.number_input("Number of People Checking In", min_value=1, max_value=15, value=1, key=f"checkin_num_{event['id']}")
-        if st.button("Confirm Check-In", key=f"confirm_checkin_{event['id']}"):
+        check_uid = st.text_input("Enter Ticket UID", key=f"checkin_uid_{event['id']}_{scope_id}")
+        email = st.text_input("Enter Email", key=f"checkin_email_{event['id']}_{scope_id}")
+        num_checkin = st.number_input("Number of People Checking In", min_value=1, max_value=15, value=1, key=f"checkin_num_{event['id']}_{scope_id}")
+        confirm_checkin_key = f"confirm_checkin_{event['id']}_{scope_id}"
+        if st.button("Confirm Check-In", key=confirm_checkin_key):
             ledger_records = get_ledger()
             for record in ledger_records:
                 if record["uid"] == check_uid and record["email"] == email and record["event"] == event["name"]:
@@ -119,8 +129,9 @@ with tab_buy:
         for c in range(3):
             idx = r*3 + c
             if idx < len(EVENTS):
+                scope_id = f"{r}_{c}"
                 with cols[c]:
-                    show_event_card(EVENTS[idx])
+                    show_event_card(EVENTS[idx], scope_id=scope_id)
 
 with tab_checkin:
     st.markdown('<h2 style="color:#fff;">Check-In Events</h2>', unsafe_allow_html=True)
@@ -130,8 +141,9 @@ with tab_checkin:
         for c in range(3):
             idx = r*3 + c
             if idx < len(EVENTS):
+                scope_id = f"{r}_{c}"
                 with cols[c]:
-                    show_event_card(EVENTS[idx])
+                    show_event_card(EVENTS[idx], scope_id=scope_id)
 
 with tab_blockchain:
     st.markdown('<h2 style="color:#fff;">Blockchain Ledger</h2>', unsafe_allow_html=True)
