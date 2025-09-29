@@ -39,6 +39,8 @@ def get_ledger():
     with open(LEDGER_FILE, "r") as f:
         reader = csv.DictReader(f)
         for row in reader:
-            row["tickets"] = int(row["tickets"])
-            records.append(row)
-    return records
+    try:
+        row["tickets"] = int(row.get("tickets", 0))
+    except ValueError:
+        row["tickets"] = 0
+
