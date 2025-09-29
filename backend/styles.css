@@ -1,123 +1,39 @@
 body {
-    background: linear-gradient(135deg,#0b0c10,#111418);
-    font-family: 'Poppins', sans-serif;
+    background-color: #141414;
     color: #fff;
+    font-family: Arial, sans-serif;
 }
-h1.title {
+
+/* Title */
+h1 {
+    margin-top: 20px;
+}
+
+/* Buttons under heading */
+.center-buttons {
     text-align: center;
-    font-size: 40px;
-    color: #e50914;
-    margin-bottom: 10px;
+    margin: 20px 0 40px 0;
 }
-.subtitle {
-    text-align: center;
-    font-size: 18px;
-    color: #bbb;
-    margin-bottom: 40px;
-}
-.top-buttons {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    background: rgba(11,12,16,0.9);
-    padding: 12px;
-    z-index: 999;
-    text-align: center;
-}
-.top-buttons button {
+
+.center-buttons button {
     background: #e50914;
     color: #fff;
     font-weight: bold;
     padding: 12px 25px;
     border-radius: 6px;
-    margin: 0 8px;
+    margin: 0 15px;
     border: none;
     cursor: pointer;
     transition: background 0.3s ease;
 }
-.top-buttons button:hover {
+.center-buttons button:hover {
     background: #ff1a1a;
 }
-.event-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit,minmax(320px,1fr));
-    gap: 30px;
-    margin-top: 100px; /* space for fixed buttons */
-}
-.event-card {
-    background: #111418;
-    border-radius: 14px;
-    box-shadow: 0 6px 20px rgba(0,0,0,0.6);
-    transition: all 0.3s ease;
-    overflow: hidden;
-}
-.event-card:hover {
-    transform: translateY(-6px);
-    box-shadow: 0 8px 24px rgba(0,0,0,0.8);
-}
-.event-image {
-    width: 100%;
-    height: 180px;
+
+/* Event Card grid images */
+.stImage > img {
+    border-radius: 10px;
+    margin-bottom: 10px;
+    height: 250px;        /* Instagram-style ratio */
     object-fit: cover;
-}
-.status-badge {
-    position: absolute;
-    top: 12px;
-    left: 12px;
-    background: #16a34a;
-    color: #fff;
-    font-weight: bold;
-    padding: 4px 12px;
-    border-radius: 999px;
-    font-size: 12px;
-}
-.status-badge.full {
-    background: #e50914;
-}
-.card-content {
-    padding: 15px;
-}
-.card-title {
-    font-size: 18px;
-    font-weight: bold;
-    margin-bottom: 8px;
-    color: #fff;
-}
-.card-desc {
-    font-size: 14px;
-    color: #bbb;
-    margin-bottom: 10px;
-}
-.card-details {
-    font-size: 13px;
-    color: #ccc;
-    margin-bottom: 10px;
-}
-.book-btn {
-    display: block;
-    width: 100%;
-    background: #e50914;
-    color: #fff;
-    text-align: center;
-    padding: 12px;
-    border-radius: 8px;
-    font-weight: bold;
-    text-decoration: none;
-    transition: background 0.3s ease;
-}
-.book-btn:hover {
-    background: #ff1a1a;
-}
-.footer {
-    border-top: 1px solid #222;
-    margin-top: 40px;
-    text-align: center;
-    color: #888;
-    font-size: 13px;
-    padding: 15px 0;
-}
-.footer span {
-    color: #e50914;
-    font-weight: bold;
 }
