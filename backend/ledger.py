@@ -1,33 +1,23 @@
-import csv, hashlib
-from datetime import datetime
+import csv, hashlib, datetime
 from pathlib import Path
 
-LEDGER_FILE = Path(__file__).parent / "ledger.csv"
-
-def hash_block(prev_hash, uid, first, last, action, timestamp):
-    return hashlib.sha256(f"{prev_hash}{uid}{first}{last}{action}{timestamp}".encode()).hexdigest()
+LEDGER_CSV = Path(__file__).parent / "ledger.csv"
 
 def add_block(uid, first, last, action):
-    timestamp = datetime.utcnow().isoformat()
-    prev_hash = ""
-    ledger_rows = []
-    if LEDGER_FILE.exists():
-        with open(LEDGER_FILE,"r",newline="",encoding="utf-8") as f:
-            reader = csv.DictReader(f)
-            ledger_rows = list(reader)
-            prev_hash = ledger_rows[-1]["hash"] if ledger_rows else ""
-    block_hash = hash_block(prev_hash, uid, first, last, action, timestamp)
-    row = {"index":len(ledger_rows)+1,"uid":uid,"first_name":first,"last_name":last,
-           "action":action,"timestamp":timestamp,"previous_hash":prev_hash,"hash":block_hash}
-    ledger_rows.append(row)
-    with open(LEDGER_FILE,"w",newline="",encoding="utf-8") as f:
+    ledger = read_ledger()
+    index = len(ledger)
+    prev_hash = ledger[-1]["hash"] if ledger else "0"*64
+    timestamp = datetime.datetime.utcnow().isoformat()
+    raw = f"{index}{uid}{first}{last}{action}{timestamp}{prev_hash}".encode()
+    block_hash = hashlib.sha256(raw).hexdigest()
+    row = {"index":index,"uid":uid,"first":first,"last":last,"action":action,"timestamp":timestamp,"hash":block_hash,"prev_hash":prev_hash}
+    with open(LEDGER_CSV,"a",newline="",encoding="utf-8") as f:
         writer = csv.DictWriter(f, fieldnames=row.keys())
-        writer.writeheader()
-        writer.writerows(ledger_rows)
-    return row
+        if f.tell()==0:
+            writer.writeheader()
+        writer.writerow(row)
 
 def read_ledger():
-    if LEDGER_FILE.exists():
-        with open(LEDGER_FILE,"r",newline="",encoding="utf-8") as f:
-            return list(csv.DictReader(f))
-    return []
+    if not LEDGER_CSV.exists(): return []
+    with open(LEDGER_CSV,"r",newline="",encoding="utf-8") as f:
+        return list(csv.DictReader(f))
