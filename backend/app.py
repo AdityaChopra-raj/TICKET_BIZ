@@ -95,25 +95,25 @@ if st.session_state.mode in ["buy", "checkin"] and st.session_state.selected_eve
             st.image(str(temp_path), use_container_width=True)
 
             st.markdown('<div class="card-content">', unsafe_allow_html=True)
-            st.markdown(f'<div class="card-title">{event["name"]}</div>', unsafe_allow_html=True)
-            st.markdown(f'<div class="card-desc">{event["description"]}</div>', unsafe_allow_html=True)
+            st.markdown(f'<div class="card-title">{event.get("name","")}</div>', unsafe_allow_html=True)
+            st.markdown(f'<div class="card-desc">{event.get("description","")}</div>', unsafe_allow_html=True)
             st.markdown(
-                f'<div class="card-details">📅 {event["date"]}<br>📍 {event["location"]}<br>'
-                f'🎟️ Tickets left: <b>{event["available_tickets"]}</b><br>'
-                f'✅ Check-Ins: <b>{event["check_ins"]}</b><br>'
-                f'💰 Price: ₹{event["price"]}</div>',
+                f'<div class="card-details">📅 {event.get("date","")}<br>📍 {event.get("location","")}<br>'
+                f'🎟️ Tickets left: <b>{event.get("available_tickets",0)}</b><br>'
+                f'✅ Check-Ins: <b>{event.get("check_ins",0)}</b><br>'
+                f'💰 Price: ₹{event.get("price",0)}</div>',
                 unsafe_allow_html=True
             )
-            if st.button(event["name"], key=f"btn_{event['id']}"):
-                st.session_state.selected_event = event["name"]
+            if st.button(event.get("name",""), key=f"btn_{event.get('id','')}"):
+                st.session_state.selected_event = event.get("name")
             st.markdown('</div></div>', unsafe_allow_html=True)
     st.markdown('</div>', unsafe_allow_html=True)
 
 # -------------------- Selected Event --------------------
 if st.session_state.selected_event:
-    event = next(e for e in EVENTS if e["name"] == st.session_state.selected_event)
-    st.markdown(f"<h2 style='text-align:center;color:#e50914;'>{event['name']}</h2>", unsafe_allow_html=True)
-    st.write(event["description"])
+    event = next(e for e in EVENTS if e.get("name") == st.session_state.selected_event)
+    st.markdown(f"<h2 style='text-align:center;color:#e50914;'>{event.get('name')}</h2>", unsafe_allow_html=True)
+    st.write(event.get("description",""))
 
     if st.session_state.mode == "buy":
         st.markdown("### Buy Tickets")
@@ -124,18 +124,18 @@ if st.session_state.selected_event:
         student_id = st.text_input("Student ID")
         email = st.text_input("Email Address")
         
-        max_tickets = min(15, event["available_tickets"])
+        max_tickets = min(15, event.get("available_tickets",0))
         qty = st.number_input("Number of tickets", min_value=1, max_value=max_tickets, value=1)
         
         if st.button("Confirm Purchase"):
             if not all([first_name, last_name, student_id, email]):
                 st.error("Please fill in all required fields!")
-            elif qty > event["available_tickets"]:
+            elif qty > event.get("available_tickets",0):
                 st.error("Not enough tickets available.")
             else:
                 event["available_tickets"] -= qty
                 add_transaction(
-                    event["name"],
+                    event.get("name"),
                     email,
                     qty,
                     datetime.now(),
@@ -143,7 +143,7 @@ if st.session_state.selected_event:
                     last_name=last_name,
                     student_id=student_id
                 )
-                st.success(f"Purchased {qty} ticket(s) for {event['name']}")
+                st.success(f"Purchased {qty} ticket(s) for {event.get('name')}")
 
     elif st.session_state.mode == "checkin":
         st.markdown("### Venue Check-In")
@@ -152,12 +152,12 @@ if st.session_state.selected_event:
         if st.button("Check In"):
             ledger = get_ledger()
             record = next(
-                (l for l in ledger if l["ticket_uid"] == ticket_uid and l["email"] == email),
+                (l for l in ledger if l.get("ticket_uid") == ticket_uid and l.get("email") == email),
                 None
             )
             if record:
-                if event["check_ins"] + 1 <= int(record["tickets_bought"]):
-                    event["check_ins"] += 1
+                if event.get("check_ins",0) + 1 <= int(record.get("tickets_bought",0)):
+                    event["check_ins"] = event.get("check_ins",0) + 1
                     st.success(f"Check-In Successful ✅ ({event['check_ins']} checked in)")
                 else:
                     st.error("All tickets for this UID are already checked in ❌")
@@ -173,13 +173,13 @@ if st.session_state.mode == "blockchain":
         for record in ledger:
             st.markdown('<div class="event-card">', unsafe_allow_html=True)
             st.markdown('<div class="card-content">', unsafe_allow_html=True)
-            st.markdown(f"<b>Event:</b> {record['event']}<br>", unsafe_allow_html=True)
-            st.markdown(f"<b>Name:</b> {record['first_name']} {record['last_name']}<br>", unsafe_allow_html=True)
-            st.markdown(f"<b>Student ID:</b> {record['student_id']}<br>", unsafe_allow_html=True)
-            st.markdown(f"<b>Email:</b> {record['email']}<br>", unsafe_allow_html=True)
-            st.markdown(f"<b>Tickets Bought:</b> {record['tickets_bought']}<br>", unsafe_allow_html=True)
-            st.markdown(f"<b>Ticket UID:</b> {record['ticket_uid']}<br>", unsafe_allow_html=True)
-            st.markdown(f"<b>Timestamp:</b> {record['timestamp']}<br>", unsafe_allow_html=True)
+            st.markdown(f"<b>Event:</b> {record.get('event','N/A')}<br>", unsafe_allow_html=True)
+            st.markdown(f"<b>Name:</b> {record.get('first_name','')} {record.get('last_name','')}<br>", unsafe_allow_html=True)
+            st.markdown(f"<b>Student ID:</b> {record.get('student_id','')}<br>", unsafe_allow_html=True)
+            st.markdown(f"<b>Email:</b> {record.get('email','')}<br>", unsafe_allow_html=True)
+            st.markdown(f"<b>Tickets Bought:</b> {record.get('tickets_bought','')}<br>", unsafe_allow_html=True)
+            st.markdown(f"<b>Ticket UID:</b> {record.get('ticket_uid','')}<br>", unsafe_allow_html=True)
+            st.markdown(f"<b>Timestamp:</b> {record.get('timestamp','')}<br>", unsafe_allow_html=True)
             st.markdown('</div></div>', unsafe_allow_html=True)
         st.markdown('</div>', unsafe_allow_html=True)
     else:
