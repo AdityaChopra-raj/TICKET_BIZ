@@ -20,7 +20,7 @@
     background: #222;
 }
 
-/* Event cards (Instagram-style square posts) */
+/* Event cards */
 .card {
     min-width: 260px;
     max-width: 260px;
@@ -33,7 +33,7 @@
     flex-shrink: 0;
 }
 
-/* Image inside card: square like Instagram */
+/* Square image */
 .card img {
     width: 100%;
     aspect-ratio: 1 / 1;
@@ -47,7 +47,7 @@
     box-shadow: 0 12px 30px rgba(0,0,0,0.9);
 }
 
-/* Card title & description */
+/* Text styles */
 .card h3 {
     text-align: center;
     color: #e50914;
@@ -67,4 +67,21 @@
     color: #fff;
     font-weight: bold;
     margin-top: 5px;
+}
+
+.card button {
+    margin-top: 10px;
+    width: 100%;
+    background-color: #e50914;
+    color: white;
+    border: none;
+    padding: 8px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: bold;
+    transition: background 0.3s;
+}
+
+.card button:hover {
+    background-color: #b0060f;
 }
