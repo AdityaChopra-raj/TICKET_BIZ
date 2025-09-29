@@ -1,85 +1,123 @@
-body, .block-container {
+body {
     background: linear-gradient(135deg,#0b0c10,#111418);
+    font-family: 'Poppins', sans-serif;
     color: #fff;
-    font-family: 'Inter','Poppins','Roboto',sans-serif;
 }
-
-/* Big Netflix-red header */
-.header-title {
+h1.title {
     text-align: center;
-    font-size: 42px;
-    font-weight: 800;
+    font-size: 40px;
     color: #e50914;
-    margin-bottom: 25px;
+    margin-bottom: 10px;
 }
-
-/* Event grid */
-.grid-container {
+.subtitle {
+    text-align: center;
+    font-size: 18px;
+    color: #bbb;
+    margin-bottom: 40px;
+}
+.top-buttons {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    background: rgba(11,12,16,0.9);
+    padding: 12px;
+    z-index: 999;
+    text-align: center;
+}
+.top-buttons button {
+    background: #e50914;
+    color: #fff;
+    font-weight: bold;
+    padding: 12px 25px;
+    border-radius: 6px;
+    margin: 0 8px;
+    border: none;
+    cursor: pointer;
+    transition: background 0.3s ease;
+}
+.top-buttons button:hover {
+    background: #ff1a1a;
+}
+.event-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill,minmax(320px,1fr));
-    gap: 25px;
+    grid-template-columns: repeat(auto-fit,minmax(320px,1fr));
+    gap: 30px;
+    margin-top: 100px; /* space for fixed buttons */
 }
-
-/* Card styling */
-.card {
+.event-card {
     background: #111418;
     border-radius: 14px;
     box-shadow: 0 6px 20px rgba(0,0,0,0.6);
     transition: all 0.3s ease;
+    overflow: hidden;
 }
-.card:hover {
+.event-card:hover {
     transform: translateY(-6px);
     box-shadow: 0 8px 24px rgba(0,0,0,0.8);
 }
-.card img {
-    border-top-left-radius: 14px;
-    border-top-right-radius: 14px;
+.event-image {
+    width: 100%;
     height: 180px;
     object-fit: cover;
-    width: 100%;
+}
+.status-badge {
+    position: absolute;
+    top: 12px;
+    left: 12px;
+    background: #16a34a;
+    color: #fff;
+    font-weight: bold;
+    padding: 4px 12px;
+    border-radius: 999px;
+    font-size: 12px;
+}
+.status-badge.full {
+    background: #e50914;
 }
 .card-content {
     padding: 15px;
 }
 .card-title {
     font-size: 18px;
-    font-weight: 700;
-    color: #fff;
+    font-weight: bold;
     margin-bottom: 8px;
+    color: #fff;
 }
 .card-desc {
-    color: #bbb;
     font-size: 14px;
+    color: #bbb;
     margin-bottom: 10px;
 }
-.card-details span {
-    display: block;
+.card-details {
     font-size: 13px;
     color: #ccc;
-    margin-bottom: 4px;
+    margin-bottom: 10px;
 }
-.important { color: #fff; font-weight: bold; }
-
-.status-badge {
-    position: absolute;
-    top: 12px;
-    left: 12px;
-    background: #16a34a;
-    color: white;
-    padding: 4px 10px;
-    border-radius: 12px;
-    font-weight: bold;
-    font-size: 12px;
-}
-
-button, .stButton>button {
-    background-color: #e50914;
+.book-btn {
+    display: block;
+    width: 100%;
+    background: #e50914;
     color: #fff;
-    border-radius: 6px;
+    text-align: center;
     padding: 12px;
+    border-radius: 8px;
     font-weight: bold;
+    text-decoration: none;
     transition: background 0.3s ease;
 }
-.stButton>button:hover {
-    background-color: #ff1a1a;
+.book-btn:hover {
+    background: #ff1a1a;
+}
+.footer {
+    border-top: 1px solid #222;
+    margin-top: 40px;
+    text-align: center;
+    color: #888;
+    font-size: 13px;
+    padding: 15px 0;
+}
+.footer span {
+    color: #e50914;
+    font-weight: bold;
 }
