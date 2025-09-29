@@ -21,19 +21,19 @@ for event in EVENTS:
         st.session_state[f"{event['id']}_sold"] = 0
         st.session_state[f"{event['id']}_checkin"] = 0
 
-# -------- Top Fixed Buttons --------
-st.markdown('<div class="top-buttons">', unsafe_allow_html=True)
-col1, col2 = st.columns([1,1])
-with col1:
-    if st.button("🎟 Buy Ticket"):
-        st.session_state.mode = "buy"
-with col2:
-    if st.button("✅ Check-In"):
-        st.session_state.mode = "checkin"
+# -------- Centered Buttons under Heading --------
+st.markdown('<div class="center-buttons">', unsafe_allow_html=True)
+c1, c2, c3 = st.columns([2,1,2])  # center column narrower
+with c2:
+    colb1, colb2 = st.columns(2)
+    with colb1:
+        if st.button("🎟 Buy Ticket", key="buy_button"):
+            st.session_state.mode = "buy"
+    with colb2:
+        if st.button("✅ Check-In", key="checkin_button"):
+            st.session_state.mode = "checkin"
 st.markdown('</div>', unsafe_allow_html=True)
 
-st.markdown('<h1 class="title">🎟 Ticket_Biz — Event Ticketing</h1>', unsafe_allow_html=True)
-st.markdown('<p class="subtitle">Book tickets or check in seamlessly with blockchain transparency.</p>', unsafe_allow_html=True)
 
 # -------- Modes --------
 if st.session_state.mode == "buy":
