@@ -21,19 +21,39 @@ with open(Path(__file__).parent / "styles.css") as f:
 st.markdown('<h1 style="text-align:center; color:#e50914; font-size:48px;">🎟 Ticket_Biz — Event Ticketing</h1>', unsafe_allow_html=True)
 st.markdown('<p style="text-align:center; color:#ddd; font-size:18px;">Welcome! Book tickets for events or check in attendees directly from this platform.</p>', unsafe_allow_html=True)
 
-# ------------------ Triangular Buttons Layout ------------------
-# Row 1: Buy Ticket and Check-In
-col1, col2, col3, col4, col5 = st.columns([1,2,1,2,1], gap="large")
-with col2:
+# ------------------ Triangular Buttons with Home ------------------
+st.markdown('<h1 style="text-align:center; color:#e50914; font-size:48px;">🎟 Ticket_Biz — Event Ticketing</h1>', unsafe_allow_html=True)
+st.markdown('<p style="text-align:center; color:#ddd; font-size:18px;">Welcome! Book tickets for events or check in attendees directly from this platform.</p>', unsafe_allow_html=True)
+
+# Top Row: Buy Ticket (left) and Check-In (right)
+col1, col2, col3 = st.columns([1,1,1])
+with col1:
     if st.button("Buy Ticket", key="btn_buy"):
         st.session_state.mode = "buy"
         st.session_state.selected_event = None
-with col4:
+with col3:
     if st.button("Check-In", key="btn_checkin"):
         st.session_state.mode = "checkin"
         st.session_state.selected_event = None
 
 st.write("\n")  # Spacer
+
+# Middle Row: Home button centered
+col_left, col_center, col_right = st.columns([1,2,1])
+with col_center:
+    if st.button("Home", key="btn_home"):
+        st.session_state.mode = None
+        st.session_state.selected_event = None
+
+st.write("\n")  # Spacer
+
+# Bottom Row: Blockchain Ledger button centered
+col_left2, col_center2, col_right2 = st.columns([1,2,1])
+with col_center2:
+    if st.button("Blockchain Ledger", key="btn_blockchain"):
+        st.session_state.mode = "ledger"
+        st.session_state.selected_event = None
+
 
 # Row 2: Blockchain Ledger button centered
 col_left, col_center, col_right = st.columns([1,2,1])
