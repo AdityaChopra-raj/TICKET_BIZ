@@ -108,15 +108,21 @@ for ev in EVENTS:
     except:
         img = Image.open(ASSETS_DIR / "placeholder.jpeg")
     
+    # HTML card with image, title, description, price, and Buy button
     st.markdown(f'''
     <div class="card">
         <img src="{img_path}" alt="{ev['name']}">
         <h3>{ev["name"]}</h3>
         <p>{ev.get("desc","")}</p>
         <p class="price">Price: ₹{ev.get("price",100)}</p>
-        <button onclick="alert('Buying ticket for {ev["name"]}')">Buy</button>
+        <form method="post">
+            <button onclick="window.alert('Buying ticket for {ev["name"]}')">Buy</button>
+        </form>
     </div>
     ''', unsafe_allow_html=True)
+
+st.markdown('</div>', unsafe_allow_html=True)
+
 
 st.markdown('</div>', unsafe_allow_html=True)
 
