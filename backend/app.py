@@ -1,125 +1,91 @@
-import streamlit as st
-from PIL import Image
-from pathlib import Path
 import csv, uuid
-from datetime import datetime
-import smtplib
-from email.message import EmailMessage
-
+from pathlib import Path
+from PIL import Image, ImageDraw
+import streamlit as st
 from events_data import EVENTS
 from ledger import add_block, read_ledger
 
-BASE_DIR = Path(__file__).parent
+BASE_DIR = Path(__file__).resolve().parent
 ASSETS_DIR = BASE_DIR / "assets"
 TICKETS_CSV = BASE_DIR / "tickets.csv"
 
 st.set_page_config(page_title="Ticket_Biz", layout="wide")
 
-# Load CSS
+# Load CSS safely
 with open(BASE_DIR / "styles.css") as f:
     st.markdown(f"<style>{f.read()}</style>", unsafe_allow_html=True)
 
 # Header
 st.markdown('<h1 class="header-title">🎟 Ticket_Biz — Event Ticketing</h1>', unsafe_allow_html=True)
-st.markdown('<p class="header-subtitle">Browse, buy, and check-in securely with blockchain verification</p>', unsafe_allow_html=True)
 
-# Session state
+# --- Utilities ---
+def generate_uid():
+    return str(uuid.uuid4())[:8]
+
+def save_ticket(uid, first, last, email, event):
+    write_header = not TICKETS_CSV.exists()
+    with open(TICKETS_CSV, "a", newline="") as f:
+        writer = csv.DictWriter(f, fieldnames=["uid","first","last","email","event","checked_in"])
+        if write_header:
+            writer.writeheader()
+        writer.writerow({
+            "uid": uid, "first": first, "last": last,
+            "email": email, "event": event, "checked_in": False
+        })
+
+def check_in_count(event_name):
+    if not TICKETS_CSV.exists():
+        return 0
+    with open(TICKETS_CSV) as f:
+        return sum(1 for r in csv.DictReader(f) if r["event"]==event_name and r["checked_in"]=="True")
+
 if "selected_event" not in st.session_state:
     st.session_state["selected_event"] = None
 
-# -------------------- HELPER FUNCTIONS --------------------
-def generate_uid(): return uuid.uuid4().hex[:10].upper()
-
-def save_ticket(uid, first, last, email, event_name):
-    exists = TICKETS_CSV.exists()
-    with open(TICKETS_CSV,"a",newline="",encoding="utf-8") as f:
-        writer = csv.writer(f)
-        if not exists:
-            writer.writerow(["uid","first_name","last_name","email","event","purchased_at","checked_in"])
-        writer.writerow([uid, first, last, email, event_name, datetime.utcnow().isoformat(),""])
-
-def mark_checked_in(uid):
-    if not TICKETS_CSV.exists(): return False
-    rows = []
-    with open(TICKETS_CSV,"r",newline="",encoding="utf-8") as f:
-        reader = csv.DictReader(f)
-        for r in reader:
-            if r["uid"] == uid:
-                r["checked_in"] = datetime.utcnow().isoformat()
-            rows.append(r)
-    with open(TICKETS_CSV,"w",newline="",encoding="utf-8") as f:
-        writer = csv.DictWriter(f, fieldnames=["uid","first_name","last_name","email","event","purchased_at","checked_in"])
-        writer.writeheader()
-        writer.writerows(rows)
-    return True
-
-def send_ticket_email(to_email, first, last, uid, event_name):
-    try:
-        email_conf = st.secrets["email"]
-        msg = EmailMessage()
-        msg["Subject"] = f"Ticket Confirmation: {event_name}"
-        msg["From"] = email_conf["address"]
-        msg["To"] = to_email
-        msg.set_content(f"Hi {first} {last},\n\nYour ticket UID: {uid}\nEvent: {event_name}\n\nShow this at check-in.\n\n— Ticket_Biz")
-        s = smtplib.SMTP_SSL(email_conf.get("smtp_host","smtp.gmail.com"), int(email_conf.get("smtp_port",465)))
-        s.login(email_conf["address"], email_conf["password"])
-        s.send_message(msg)
-        s.quit()
-        return True, None
-    except Exception as e:
-        return False, str(e)
-
-# -------------------- DISPLAY EVENTS --------------------
+# --- Event Grid ---
 st.markdown('<div class="grid-container">', unsafe_allow_html=True)
+
 for ev in EVENTS:
-    # Determine status
-    is_full = ev.get("tickets_left",0) <= 0
-    dimmed_class = "dimmed" if st.session_state["selected_event"] and st.session_state["selected_event"] != ev["name"] else ""
-    st.markdown(f'<div class="card {dimmed_class}">', unsafe_allow_html=True)
-    
+    is_full = ev["tickets_left"] <= 0
+    st.markdown('<div class="card">', unsafe_allow_html=True)
+
     # Safe image loading
-    event_image_path = ASSETS_DIR / ev.get("image","")
-    placeholder_path = ASSETS_DIR / "placeholder.jpg"
-    if event_image_path.exists() and event_image_path.is_file():
-        img = Image.open(event_image_path)
+    img_path = ASSETS_DIR / ev["image"]
+    if img_path.exists():
+        img = Image.open(img_path)
     else:
-        img = Image.open(placeholder_path)
+        img = Image.new("RGB",(1280,720),color=(30,30,30))
+        d = ImageDraw.Draw(img)
+        d.text((50,50),"No Image Available",fill=(200,200,200))
     st.image(img, use_container_width=True)
-    
-    # Status badge
+
     badge_color = "#16a34a" if not is_full else "#ff0000"
     badge_text = "Available" if not is_full else "Full"
     st.markdown(f'<div class="status-badge" style="background:{badge_color}">{badge_text}</div>', unsafe_allow_html=True)
-    
-    # Card content
+
     st.markdown('<div class="card-content">', unsafe_allow_html=True)
     st.markdown(f'<div class="card-title">{ev["name"]}</div>', unsafe_allow_html=True)
     st.markdown(f'<div class="card-desc">{ev["desc"]}</div>', unsafe_allow_html=True)
     st.markdown('<div class="card-details">', unsafe_allow_html=True)
-    st.markdown(f'<span>📅 {ev.get("date","TBD")}</span>', unsafe_allow_html=True)
-    st.markdown(f'<span>📍 {ev.get("location","Online")}</span>', unsafe_allow_html=True)
-    st.markdown(f'<span>🎟️ Tickets left: <span class="important">{ev.get("tickets_left",0)}</span></span>', unsafe_allow_html=True)
-    
-    # Count check-ins
-    check_in_count = 0
-    if TICKETS_CSV.exists():
-        check_in_count = sum(1 for t in csv.DictReader(open(TICKETS_CSV)) if t["event"]==ev["name"] and t["checked_in"])
-    st.markdown(f'<span>👥 Checked in: {check_in_count}</span>', unsafe_allow_html=True)
-    
-    st.markdown(f'<span>💰 Price: ₹{ev.get("price",0)}</span>', unsafe_allow_html=True)
-    st.markdown('</div>', unsafe_allow_html=True)  # card-details
+    st.markdown(f'<span>📅 {ev["date"]}</span>', unsafe_allow_html=True)
+    st.markdown(f'<span>📍 {ev["location"]}</span>', unsafe_allow_html=True)
+    st.markdown(f'<span>🎟️ Tickets left: <span class="important">{ev["tickets_left"]}</span></span>', unsafe_allow_html=True)
+    st.markdown(f'<span>👥 Checked in: {check_in_count(ev["name"])}</span>', unsafe_allow_html=True)
+    st.markdown(f'<span>💰 Price: ₹{ev["price"]}</span>', unsafe_allow_html=True)
+    st.markdown('</div>', unsafe_allow_html=True)
 
-    # Book Now Button
     if st.button("Book Now", key=f"buy_{ev['name']}") and not is_full:
         st.session_state["selected_event"] = ev["name"]
 
-    st.markdown('</div>', unsafe_allow_html=True)  # card-content
-    st.markdown('</div>', unsafe_allow_html=True)  # card
+    st.markdown('</div>', unsafe_allow_html=True)
+    st.markdown('</div>', unsafe_allow_html=True)
+
 st.markdown('</div>', unsafe_allow_html=True)
 
-# -------------------- PURCHASE FORM --------------------
+# --- Purchase Form ---
 if st.session_state["selected_event"]:
-    st.subheader(f"Booking: {st.session_state['selected_event']}")
+    sel = next(e for e in EVENTS if e["name"]==st.session_state["selected_event"])
+    st.subheader(f"Booking: {sel['name']}")
     with st.form("purchase_form"):
         first = st.text_input("First Name")
         last = st.text_input("Last Name")
@@ -127,35 +93,21 @@ if st.session_state["selected_event"]:
         qty = st.number_input("Number of Tickets (Max 15)", min_value=1, max_value=15, value=1)
         submitted = st.form_submit_button("Confirm Purchase")
         if submitted:
-            # Find selected event
-            selected_ev = next((e for e in EVENTS if e["name"]==st.session_state["selected_event"]), None)
-            if selected_ev and selected_ev["tickets_left"] >= qty:
+            if sel["tickets_left"] >= qty:
                 for _ in range(qty):
                     uid = generate_uid()
-                    save_ticket(uid, first, last, email, selected_ev["name"])
+                    save_ticket(uid, first, last, email, sel["name"])
                     add_block(uid, first, last, "buy")
-                    send_ticket_email(email, first, last, uid, selected_ev["name"])
-                selected_ev["tickets_left"] -= qty
-                st.success(f"{qty} tickets purchased! Event UID(s) sent to email.")
+                sel["tickets_left"] -= qty
+                st.success(f"{qty} ticket(s) purchased successfully!")
             else:
                 st.error("Not enough tickets available!")
             st.session_state["selected_event"] = None
 
-# -------------------- CHECK-IN FORM --------------------
-st.subheader("Check-in")
-with st.form("checkin_form"):
-    uid_input = st.text_input("Enter your UID")
-    checked_in = st.form_submit_button("Check-In")
-    if checked_in and uid_input:
-        mark_checked_in(uid_input)
-        add_block(uid_input, "N/A", "N/A", "checkin")
-        st.success(f"UID {uid_input} checked in successfully!")
-
-# -------------------- LEDGER --------------------
-st.subheader("Blockchain Ledger")
-ledger_rows = read_ledger()
-for block in ledger_rows[-20:]:
-    st.markdown(f"Index: {block['index']} | UID: {block['uid']} | Action: {block['action']} | Timestamp: {block['timestamp']} | Hash: {block['hash']}")
-
-# -------------------- FOOTER --------------------
-st.markdown('<div class="footer"><span class="brand">Ticket_Biz</span> © 2025. Powered by Blockchain Technology</div>', unsafe_allow_html=True)
+# --- Ledger Display ---
+st.subheader("🔗 Blockchain Ledger")
+ledger = read_ledger()
+if ledger:
+    st.dataframe(ledger, use_container_width=True)
+else:
+    st.write("Ledger is empty.")
