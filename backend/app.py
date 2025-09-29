@@ -23,7 +23,7 @@ with open(Path(__file__).parent / "styles.css") as f:
 st.markdown('<h1 style="text-align:center; color:#e50914; font-size:48px;">🎟 Ticket_Biz — Event Ticketing</h1>', unsafe_allow_html=True)
 st.markdown('<p style="text-align:center; color:#ddd; font-size:18px;">Welcome! Book tickets, check in attendees, or view the blockchain ledger.</p>', unsafe_allow_html=True)
 
-# ------------------ Tabs ------------------
+# ------------------ Tabs / Ribbon ------------------
 tabs = ["Home", "Buy Ticket", "Check-In", "Blockchain Ledger"]
 selected_tab = st.radio("", tabs, index=0, horizontal=True)
 
@@ -63,7 +63,7 @@ def show_event_card(event, key_prefix=""):
 
 # ------------------ Home Tab ------------------
 if st.session_state.mode is None:
-    st.markdown('<p style="text-align:center; color:#bbb; font-size:16px;">Choose an option from above tabs to begin.</p>', unsafe_allow_html=True)
+    st.markdown('<p style="text-align:center; color:#bbb; font-size:16px;">Choose an option from the tabs above to begin.</p>', unsafe_allow_html=True)
 
 # ------------------ Buy Ticket / Check-In Tabs ------------------
 if st.session_state.mode in ["buy", "checkin"] and st.session_state.selected_event is None:
