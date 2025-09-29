@@ -2,7 +2,7 @@ EVENTS = [
     {
         "name": "Navratri Pooja",
         "desc": "Celebrate Navratri with vibrant dances and rituals.",
-        "image": "navratri.avif",
+        "image": "navratri.jpeg.avif",
         "date": "2025-10-05",
         "location": "Community Hall",
         "tickets_left": 100,
