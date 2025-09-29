@@ -4,10 +4,12 @@ from PIL import Image
 from events_data import EVENTS, ASSETS_DIR
 from ledger import add_transaction, get_ledger
 from email_utils import send_email
+from datetime import datetime
 
+# ------------------ Page Config ------------------
 st.set_page_config(page_title="Ticket_Biz", layout="wide")
 
-# Initialize session state
+# ------------------ Session State ------------------
 if "mode" not in st.session_state:
     st.session_state.mode = None
 if "selected_event" not in st.session_state:
@@ -21,11 +23,10 @@ with open(Path(__file__).parent / "styles.css") as f:
 st.markdown('<h1 style="text-align:center; color:#e50914; font-size:48px;">🎟 Ticket_Biz — Event Ticketing</h1>', unsafe_allow_html=True)
 st.markdown('<p style="text-align:center; color:#ddd; font-size:18px;">Welcome! Book tickets, check in attendees, or view the blockchain ledger.</p>', unsafe_allow_html=True)
 
-# ------------------ Top Tabs Navigation ------------------
+# ------------------ Tabs ------------------
 tabs = ["Home", "Buy Ticket", "Check-In", "Blockchain Ledger"]
 selected_tab = st.radio("", tabs, index=0, horizontal=True)
 
-# Set mode based on tab
 if selected_tab == "Home":
     st.session_state.mode = None
     st.session_state.selected_event = None
@@ -39,7 +40,7 @@ elif selected_tab == "Blockchain Ledger":
     st.session_state.mode = "ledger"
     st.session_state.selected_event = None
 
-# ------------------ Helper: Resize Image ------------------
+# ------------------ Helpers ------------------
 def get_resized_image(img_name):
     img_path = ASSETS_DIR / img_name
     placeholder_path = ASSETS_DIR / "placeholder.jpg"
@@ -49,7 +50,22 @@ def get_resized_image(img_name):
     img = img.resize((320, 180), Image.LANCZOS)
     return img
 
-# ------------------ Trending Events Grid ------------------
+def show_event_card(event, key_prefix=""):
+    st.image(get_resized_image(event["image"]), use_container_width=True)
+    availability = "AVAILABLE" if event["available_tickets"] > 0 else "FULL"
+    avail_color = "#16a34a" if event["available_tickets"] > 0 else "#ff0000"
+    st.markdown(f'<div class="availability-tag" style="background-color:{avail_color}">{availability}</div>', unsafe_allow_html=True)
+    st.markdown(f'<div class="card-title">{event["name"]}</div>', unsafe_allow_html=True)
+    st.markdown(f'<div class="card-desc">{event["description"]}</div>', unsafe_allow_html=True)
+    st.markdown(f'<div class="card-details">📅 {event["date"]}<br>📍 {event["location"]}<br>🎟️ {event["available_tickets"]} tickets left<br>💰 From ₹{event["price"]}</div>', unsafe_allow_html=True)
+    if st.button("Select Event", key=f"{key_prefix}_{event['id']}"):
+        st.session_state.selected_event = event
+
+# ------------------ Home Tab ------------------
+if st.session_state.mode is None:
+    st.markdown('<p style="text-align:center; color:#bbb; font-size:16px;">Choose an option from above tabs to begin.</p>', unsafe_allow_html=True)
+
+# ------------------ Buy Ticket / Check-In Tabs ------------------
 if st.session_state.mode in ["buy", "checkin"] and st.session_state.selected_event is None:
     st.markdown('<h2 class="section-title">Trending Events</h2>', unsafe_allow_html=True)
     rows = len(EVENTS) // 3 + (1 if len(EVENTS) % 3 else 0)
@@ -60,18 +76,8 @@ if st.session_state.mode in ["buy", "checkin"] and st.session_state.selected_eve
             if idx >= len(EVENTS):
                 continue
             event = EVENTS[idx]
-            col = cols[c]
-            with col:
-                img = get_resized_image(event["image"])
-                st.image(img, use_container_width=True)
-                availability = "AVAILABLE" if event["available_tickets"] > 0 else "FULL"
-                avail_color = "#16a34a" if event["available_tickets"] > 0 else "#ff0000"
-                st.markdown(f'<div class="availability-tag" style="background-color:{avail_color}">{availability}</div>', unsafe_allow_html=True)
-                st.markdown(f'<div class="card-title">{event["name"]}</div>', unsafe_allow_html=True)
-                st.markdown(f'<div class="card-desc">{event["description"]}</div>', unsafe_allow_html=True)
-                st.markdown(f'<div class="card-details">📅 {event["date"]}<br>📍 {event["location"]}<br>🎟️ {event["available_tickets"]} tickets left<br>💰 From ₹{event["price"]}</div>', unsafe_allow_html=True)
-                if st.button("Select Event", key=f"select_{event['id']}"):
-                    st.session_state.selected_event = event
+            with cols[c]:
+                show_event_card(event, key_prefix="eventcard")
 
 # ------------------ Buy Tickets Section ------------------
 if st.session_state.mode == "buy" and st.session_state.selected_event:
@@ -82,7 +88,7 @@ if st.session_state.mode == "buy" and st.session_state.selected_event:
     uid = st.text_input("Student ID / UID", key="buy_uid")
     email = st.text_input("Email", key="buy_email")
     num_tickets = st.number_input("Number of Tickets", min_value=1, max_value=15, value=1, key="buy_count")
-    
+
     if st.button("Confirm Purchase", key="buy_confirm"):
         if not all([first_name, last_name, uid, email]):
             st.warning("Please fill all details.")
@@ -101,7 +107,7 @@ if st.session_state.mode == "checkin" and st.session_state.selected_event:
     check_uid = st.text_input("Enter Ticket UID", key="checkin_uid")
     email = st.text_input("Enter Email", key="checkin_email")
     num_checkin = st.number_input("Number of People Checking In", min_value=1, max_value=15, value=1, key="checkin_count")
-    
+
     if st.button("Confirm Check-In", key="confirm_checkin"):
         ledger_records = get_ledger()
         for record in ledger_records:
