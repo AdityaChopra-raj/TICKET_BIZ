@@ -1,4 +1,4 @@
-import csv, hashlib, uuid
+import csv, hashlib
 from datetime import datetime
 from pathlib import Path
 
