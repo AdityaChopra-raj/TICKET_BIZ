@@ -50,7 +50,8 @@ with c2:
             st.session_state.mode = "blockchain"
             st.session_state.selected_event = None
 st.markdown('</div>', unsafe_allow_html=True)
-
+else:
+        st.info("No blockchain records yet.")
 # -------------------- Image Resizing --------------------
 def get_resized_image(image_path, target_width=320, target_height=480):
     try:
