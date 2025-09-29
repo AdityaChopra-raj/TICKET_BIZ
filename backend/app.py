@@ -51,7 +51,7 @@ with c2:
             st.session_state.selected_event = None
 st.markdown('</div>', unsafe_allow_html=True)
 
-# -------------------- Image Resizing Function --------------------
+# -------------------- Image Resizing --------------------
 def get_resized_image(image_path, target_width=320, target_height=480):
     try:
         img = Image.open(image_path)
@@ -70,6 +70,7 @@ def get_resized_image(image_path, target_width=320, target_height=480):
 
     img = img.resize((new_width, new_height), Image.Resampling.LANCZOS)
 
+    # Crop center
     left = (new_width - target_width) / 2
     top = (new_height - target_height) / 2
     right = left + target_width
