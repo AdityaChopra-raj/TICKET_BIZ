@@ -1,206 +1,141 @@
-# app.py
 import streamlit as st
-from PIL import Image
 from pathlib import Path
+from PIL import Image
+from ledger import add_transaction, get_ledger, update_check_in, get_tickets_sold, get_checked_in
 from events_data import EVENTS
-from ledger import add_transaction, get_ledger, check_in, get_tickets_sold, get_checked_in
-import hashlib
+import uuid
 
-st.set_page_config(page_title="🎟 Ticket_Biz — Event Ticketing", page_icon="🎫", layout="wide")
-ASSETS_DIR = Path(__file__).parent / "assets"
+# Directories
+BASE_DIR = Path(__file__).parent
+ASSETS_DIR = BASE_DIR / "assets"
 
-st.markdown("""
-<style>
-/* General */
-body {
-    background: linear-gradient(#0b0c10, #111418);
-    color: #fff;
-    font-family: 'Inter', sans-serif;
-}
-h1 {
-    color: #e50914;
-    font-size: 48px;
-    text-align: center;
-    margin-bottom: 10px;
-}
-h3 {
-    color: #ddd;
-    text-align: center;
-    margin-bottom: 40px;
-}
-.footer {
-    text-align:center;
-    color:#888;
-    padding:10px;
-    border-top:1px solid #222;
-}
-.event-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit,minmax(320px,1fr));
-    gap: 20px;
-    justify-items:center;
-}
-.event-card {
-    background:#111418;
-    border-radius:12px;
-    width:320px;
-    transition: 0.3s all;
-    overflow:hidden;
-}
-.event-card:hover {
-    box-shadow: 0 0 20px #e50914;
-}
-.event-card img {
-    width:320px;
-    height:180px;
-    object-fit:cover;
-}
-.event-content {
-    padding:15px;
-}
-.event-content h4 {
-    margin:5px 0;
-}
-.event-content p {
-    color:#bbb;
-    font-size:14px;
-    height:40px;
-    overflow:hidden;
-}
-.event-details {
-    font-size:13px;
-    color:#ccc;
-    margin-bottom:10px;
-}
-.book-btn, .check-btn {
-    width:100%;
-    background:#e50914;
-    color:#fff;
-    font-weight:bold;
-    padding:10px;
-    border:none;
-    border-radius:6px;
-    cursor:pointer;
-}
-.book-btn:hover, .check-btn:hover {
-    background:#ff1a1a;
-}
-.available-tag {
-    background:#16a34a;
-    color:#fff;
-    padding:3px 8px;
-    border-radius:6px;
-    display:inline-block;
-    margin-bottom:5px;
-    font-size:12px;
-    font-weight:bold;
-}
-</style>
-""", unsafe_allow_html=True)
+# App Config
+st.set_page_config(page_title="🎟 Ticket_Biz — Event Ticketing", layout="wide")
+
+# Helper: Resize image to uniform size
+def get_resized_image(img_path, width=320, height=180):
+    img = Image.open(img_path)
+    return img.resize((width, height), Image.LANCZOS)
+
+# Helper: Display event card
+def show_event_card(event, tab_name="home", idx=0):
+    col1, col2, col3 = st.columns(3)
+    col = [col1, col2, col3][idx % 3]
+
+    with col:
+        # Image
+        img_path = ASSETS_DIR / event["image"]
+        img = get_resized_image(img_path)
+        st.image(img, use_container_width=True)
+
+        # Availability
+        tickets_left = event["total_tickets"] - get_tickets_sold(event["id"])
+        checked_in = get_checked_in(event["id"])
+        avail_text = f"AVAILABLE ({tickets_left} left)" if tickets_left > 0 else "FULL"
+        avail_color = "green" if tickets_left > 0 else "red"
+        st.markdown(f"<p style='color:{avail_color}; font-weight:bold; text-align:center'>{avail_text}</p>", unsafe_allow_html=True)
+
+        # Title & description
+        st.markdown(f"<h4 style='margin:5px 0'>{event['name']}</h4>", unsafe_allow_html=True)
+        st.markdown(f"<p style='color:#bbb; font-size:14px'>{event['description']}</p>", unsafe_allow_html=True)
+
+        # Details
+        st.markdown(f"<p>📅 {event['date']}<br>📍 {event['venue']}<br>🎟️ Tickets sold: {get_tickets_sold(event['id'])}/{event['total_tickets']}<br>💰 From ₹{event['price']}</p>", unsafe_allow_html=True)
+
+        # Buttons per tab
+        if tab_name == "buy":
+            buy_key = f"buy_btn_{event['id']}_{idx}"
+            if tickets_left > 0 and st.button("Buy Ticket", key=buy_key):
+                st.session_state["current_event"] = event
+                st.session_state["flow"] = "buy"
+        elif tab_name == "checkin":
+            check_key = f"checkin_btn_{event['id']}_{idx}"
+            if st.button("Check In", key=check_key):
+                st.session_state["current_event"] = event
+                st.session_state["flow"] = "checkin"
+
+# Initialize session state
+if "flow" not in st.session_state:
+    st.session_state["flow"] = "home"
+if "current_event" not in st.session_state:
+    st.session_state["current_event"] = None
 
 # Tabs
-tabs = ["Home", "Buy Ticket", "Check In", "Blockchain"]
-tab_choice = st.tabs(tabs)
-tab_home, tab_buy, tab_checkin, tab_blockchain = tab_choice
+tab_home, tab_buy, tab_checkin, tab_blockchain = st.tabs(["Home", "Buy Ticket", "Check In", "Blockchain"])
 
-# HOME TAB
+# --- Home Tab ---
 with tab_home:
-    st.title("🎟 Ticket_Biz — Event Ticketing")
-    st.subheader("Welcome! Book and manage your event tickets easily. Explore trending events and check in seamlessly.")
+    st.markdown("<h1 style='color:#e50914; text-align:center; font-size:48px'>🎟 Ticket_Biz — Event Ticketing</h1>", unsafe_allow_html=True)
+    st.markdown("<p style='text-align:center; color:#ddd; font-size:18px'>Welcome to Ticket_Biz! Buy tickets and check in securely with our blockchain-powered ledger.</p>", unsafe_allow_html=True)
 
-# UTILITY FUNCTIONS
-def get_resized_image(img_path):
-    img = Image.open(img_path)
-    img = img.resize((320, 180))
-    return img
-
-def get_hash(record):
-    """Generate SHA256 hash of a record dict"""
-    record_str = "|".join([str(v) for v in record.values()])
-    return hashlib.sha256(record_str.encode()).hexdigest()[:10]
-
-def show_event_card(event, tab="buy"):
-    tickets_left = event["total_tickets"] - get_tickets_sold(event["id"])
-    checked_in = get_checked_in(event["id"])
-    img_path = ASSETS_DIR / event["image"]
-    img = get_resized_image(img_path)
-    
-    st.image(img, use_container_width=True)
-    st.markdown(f'<div class="available-tag">{"AVAILABLE" if tickets_left>0 else "FULL"}</div>', unsafe_allow_html=True)
-    
-    st.markdown(f'<div class="event-content"><h4>{event["name"]}</h4>', unsafe_allow_html=True)
-    st.markdown(f'<p>{event["description"]}</p>', unsafe_allow_html=True)
-    st.markdown(f'''
-    <div class="event-details">
-    📅 {event["date_time"]} <br>
-    📍 {event["venue"]} <br>
-    🎟️ {tickets_left}/{event["total_tickets"]} tickets left <br>
-    💰 From ₹{event["price"]}
-    </div>
-    ''', unsafe_allow_html=True)
-    
-    if tab=="buy" and tickets_left>0:
-        buy_key = f"buy_{event['id']}"
-        if st.button("Buy Ticket", key=buy_key):
-            with st.form(f"form_{event['id']}"):
-                first_name = st.text_input("First Name")
-                last_name = st.text_input("Last Name")
-                student_id = st.text_input("Student ID")
-                email = st.text_input("Email")
-                num_tickets = st.number_input("Number of Tickets", min_value=1, max_value=min(15,tickets_left))
-                submitted = st.form_submit_button("Confirm Purchase")
-                if submitted:
-                    if first_name and last_name and student_id and email and num_tickets>0:
-                        add_transaction(event["id"], event["name"], first_name, last_name, student_id, email, int(num_tickets))
-                        st.success(f"Successfully purchased {int(num_tickets)} ticket(s)!")
-                    else:
-                        st.error("Please fill all fields correctly.")
-    
-    elif tab=="checkin":
-        check_key = f"check_{event['id']}"
-        if st.button("Check In", key=check_key):
-            with st.form(f"check_form_{event['id']}"):
-                student_id = st.text_input("Student ID")
-                email = st.text_input("Email")
-                num_checkin = st.number_input("Number of people checking in", min_value=1, max_value=5)
-                submitted = st.form_submit_button("Confirm Check-In")
-                if submitted:
-                    if student_id and email:
-                        check_in((student_id,email), tickets_to_check_in=num_checkin)
-                        st.success(f"Checked in {num_checkin} attendee(s)!")
-                    else:
-                        st.error("Please enter valid Student ID and Email.")
-    st.markdown("</div>", unsafe_allow_html=True)
-    st.markdown("---")
-
-# BUY TICKET TAB
+# --- Buy Ticket Tab ---
 with tab_buy:
-    st.header("Trending Events")
-    for event in EVENTS:
-        show_event_card(event, tab="buy")
+    st.markdown("<h2 style='color:white; text-align:center'>Trending Events</h2>", unsafe_allow_html=True)
+    for idx, event in enumerate(EVENTS):
+        show_event_card(event, tab_name="buy", idx=idx)
 
-# CHECK IN TAB
+    # If user clicked Buy on a specific event
+    if st.session_state.get("flow") == "buy" and st.session_state.get("current_event"):
+        event = st.session_state["current_event"]
+        st.subheader(f"Buy Tickets for {event['name']}")
+        with st.form(key=f"buy_form_{event['id']}"):
+            first_name = st.text_input("First Name")
+            last_name = st.text_input("Last Name")
+            student_id = st.text_input("Student ID")
+            email = st.text_input("Email")
+            tickets_left = event["total_tickets"] - get_tickets_sold(event["id"])
+            num_tickets = st.number_input("Number of Tickets", min_value=1, max_value=min(15, tickets_left), step=1)
+            submit = st.form_submit_button("Confirm Purchase")
+            if submit:
+                if first_name and last_name and student_id and email and num_tickets > 0:
+                    uid = str(uuid.uuid4())[:8]
+                    add_transaction(event["id"], event["name"], first_name, last_name, student_id, email, num_tickets, uid, price=event["price"])
+                    st.success(f"Purchase Confirmed! Your UID: {uid}")
+                else:
+                    st.error("Please fill in all fields and select number of tickets.")
+
+# --- Check In Tab ---
 with tab_checkin:
-    st.header("Check In Events")
-    for event in EVENTS:
-        show_event_card(event, tab="checkin")
+    st.markdown("<h2 style='color:white; text-align:center'>Check In</h2>", unsafe_allow_html=True)
+    for idx, event in enumerate(EVENTS):
+        show_event_card(event, tab_name="checkin", idx=idx)
 
-# BLOCKCHAIN TAB
+    if st.session_state.get("flow") == "checkin" and st.session_state.get("current_event"):
+        event = st.session_state["current_event"]
+        st.subheader(f"Check In for {event['name']}")
+        with st.form(key=f"checkin_form_{event['id']}"):
+            uid = st.text_input("Enter Ticket UID")
+            tickets_left = event["total_tickets"] - get_tickets_sold(event["id"])
+            max_checkin = min(15, get_tickets_sold(event["id"]))
+            num_checkin = st.number_input("Number of People Checking In", min_value=1, max_value=max_checkin, step=1)
+            submit = st.form_submit_button("Confirm Check In")
+            if submit:
+                if uid:
+                    success = update_check_in(uid, num_checkin)
+                    if success:
+                        st.success(f"Checked in {num_checkin} person(s) successfully!")
+                    else:
+                        st.error("Invalid UID. Check your ticket UID.")
+                else:
+                    st.error("Please enter a valid UID.")
+
+# --- Blockchain Tab ---
 with tab_blockchain:
-    st.header("Blockchain Ledger")
+    st.markdown("<h2 style='color:white; text-align:center'>Blockchain Ledger</h2>", unsafe_allow_html=True)
     ledger = get_ledger()
-    for record in ledger:
-        st.markdown(f'''
-        <div class="event-card" style="width:320px; padding:10px; margin-bottom:10px;">
-            <b>Event:</b> {record['event_name']}<br>
-            <b>Name:</b> {record['first_name']} {record['last_name']}<br>
-            <b>Student ID:</b> {record['student_id']}<br>
-            <b>Email:</b> {record['email']}<br>
-            <b>Tickets:</b> {record['num_tickets']}<br>
-            <b>Checked In:</b> {record['num_checked_in']}<br>
-            <b>Hash:</b> {get_hash(record)}
-        </div>
-        ''', unsafe_allow_html=True)
-
-# FOOTER
-st.markdown('<div class="footer">Ticket_Biz © 2025. Powered by Blockchain Technology</div>', unsafe_allow_html=True)
+    if ledger:
+        for record in ledger:
+            st.markdown(
+                f"<div style='background:#111418; padding:10px; margin:5px 0; border-radius:8px'>"
+                f"<b>Event:</b> {record['event_name']}<br>"
+                f"<b>Name:</b> {record['first_name']} {record['last_name']}<br>"
+                f"<b>Student ID:</b> {record['student_id']}<br>"
+                f"<b>Email:</b> {record['email']}<br>"
+                f"<b>Tickets Bought:</b> {record['num_tickets']}<br>"
+                f"<b>Checked In:</b> {record['num_checked_in']}<br>"
+                f"<b>UID:</b> {record['uid']}<br>"
+                f"</div>",
+                unsafe_allow_html=True
+            )
+    else:
+        st.info("No transactions yet.")
