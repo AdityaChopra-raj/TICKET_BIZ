@@ -1,64 +1,65 @@
 # events_data.py
+# List of event dictionaries
 
 EVENTS = [
     {
         "id": 1,
         "name": "Navratri Garba Night",
-        "description": "Celebrate Navratri with vibrant dances and traditional music. Dress in colorful attire and join the festivities!",
-        "date_time": "2025-10-12 19:00",
-        "venue": "City Cultural Hall, Ludhiana",
-        "total_tickets": 100,
-        "price": 500,
+        "description": "Join us for an electrifying Garba night filled with traditional dances and music.",
         "image": "navratri.jpeg.avif",
+        "date": "2025-10-10 19:00",
+        "venue": "Community Hall, Ludhiana",
+        "total_tickets": 150,
+        "price": "₹200-₹500"
     },
     {
         "id": 2,
         "name": "Diwali Dance Celebration",
-        "description": "A spectacular Diwali night filled with dance, music, and fireworks. Bring your friends and family!",
-        "date_time": "2025-11-01 18:30",
-        "venue": "Town Square Auditorium",
-        "total_tickets": 120,
-        "price": 600,
+        "description": "Celebrate the festival of lights with dance performances and DJ music.",
         "image": "diwali.jpeg",
+        "date": "2025-11-05 18:00",
+        "venue": "City Auditorium, Ludhiana",
+        "total_tickets": 200,
+        "price": "₹150-₹400"
     },
     {
         "id": 3,
         "name": "Freshers Welcome Party",
-        "description": "Kick off the semester with fun, games, and music. Meet your peers and enjoy an unforgettable night!",
-        "date_time": "2025-09-20 20:00",
-        "venue": "University Campus Lawn",
-        "total_tickets": 150,
-        "price": 400,
+        "description": "Welcome the new batch with fun activities, music, and networking.",
         "image": "freshers.jpeg",
+        "date": "2025-09-20 17:00",
+        "venue": "College Lawn, Ludhiana",
+        "total_tickets": 250,
+        "price": "₹100-₹300"
     },
     {
         "id": 4,
         "name": "Summer Music Fest",
-        "description": "An outdoor festival featuring live bands, food stalls, and fun activities for all music lovers!",
-        "date_time": "2025-06-15 16:00",
-        "venue": "Green Park Amphitheatre",
-        "total_tickets": 200,
-        "price": 800,
+        "description": "Experience live bands, food stalls, and summer vibes.",
         "image": "club.jpeg",
+        "date": "2025-08-15 16:00",
+        "venue": "Open Ground, Ludhiana",
+        "total_tickets": 300,
+        "price": "₹250-₹600"
     },
     {
         "id": 5,
         "name": "Art Exhibition",
-        "description": "Showcasing local artists and their masterpieces. Explore, admire, and buy artwork from talented creators.",
-        "date_time": "2025-07-10 10:00",
-        "venue": "City Art Gallery",
-        "total_tickets": 80,
-        "price": 300,
+        "description": "Explore contemporary art from local and national artists.",
         "image": "ravan.jpeg",
+        "date": "2025-12-01 10:00",
+        "venue": "Art Gallery, Ludhiana",
+        "total_tickets": 100,
+        "price": "₹50-₹200"
     },
     {
         "id": 6,
         "name": "Tech Conference",
-        "description": "Join industry leaders and innovators to discuss the latest in technology and entrepreneurship.",
-        "date_time": "2025-08-05 09:00",
-        "venue": "Tech Convention Center",
-        "total_tickets": 250,
-        "price": 1000,
-        "image": "tech.jpeg",
-    },
+        "description": "Attend sessions by industry leaders and network with tech enthusiasts.",
+        "image": "placeholder.jpg",
+        "date": "2025-10-25 09:00",
+        "venue": "Convention Center, Ludhiana",
+        "total_tickets": 180,
+        "price": "₹300-₹700"
+    }
 ]
