@@ -84,6 +84,7 @@ with selected_tab[1]:
             show_event_card(event, idx, tab_name="buy")
 
     elif st.session_state["current_view"] == "buy_form":
+        # ✅ Use event_name from session_state instead of event['name']
         event_name = st.session_state["selected_event"]
         st.subheader(f"Buy Tickets for {event_name}")
 
@@ -92,7 +93,7 @@ with selected_tab[1]:
             last_name = st.text_input("Last Name")
             student_id = st.text_input("Student ID")
             email = st.text_input("Email")
-            num_tickets = st.number_input("Number of Tickets", min_value=1, step=1)
+            num_tickets = st.number_input("Number of Tickets", min_value=1, max_value=15, step=1)
 
             submitted = st.form_submit_button("Confirm Purchase")
             if submitted:
@@ -101,7 +102,7 @@ with selected_tab[1]:
                         event_name, first_name, last_name, student_id, num_tickets, email
                     )
 
-                    # ✅ Send Ticket UID via email
+                    # Send Ticket UID via email
                     subject = f"Your Ticket for {event_name}"
                     body = (
                         f"Hello {first_name} {last_name},\n\n"
@@ -127,35 +128,44 @@ with selected_tab[1]:
                 else:
                     st.error("⚠️ Please fill in all fields before confirming.")
 
+
 # ---------------------------
 # CHECK IN TAB
 # ---------------------------
 with selected_tab[2]:
     st.header("Check In")
 
-    if "checkin_view" not in st.session_state:
-        st.session_state["checkin_view"] = "cards"
+    if "current_view_checkin" not in st.session_state:
+        st.session_state["current_view_checkin"] = "cards"
 
-    if st.session_state["checkin_view"] == "cards":
+    if st.session_state["current_view_checkin"] == "cards":
         for idx, event in enumerate(EVENTS):
             show_event_card(event, idx, tab_name="checkin")
 
-    elif st.session_state["checkin_view"] == "checkin_form":
+    elif st.session_state["current_view_checkin"] == "checkin_form":
+        # ✅ Use event_name from session_state
         event_name = st.session_state["selected_event"]
         st.subheader(f"Check In for {event_name}")
 
         with st.form("checkin_form"):
             ticket_uid = st.text_input("Enter Ticket UID")
-            num_people = st.number_input("Number of People Checking In", min_value=1, step=1)
-            submitted = st.form_submit_button("Confirm Check In")
+            email = st.text_input("Email used for purchase")
+            num_people = st.number_input(
+                "Number of People Checking In", min_value=1, max_value=15, step=1
+            )
 
+            submitted = st.form_submit_button("Check In")
             if submitted:
-                if check_in_transaction(ticket_uid, num_people):
-                    st.success("✅ Check-in successful!")
-                else:
-                    st.error("❌ Invalid UID or exceeding purchased tickets.")
+                if ticket_uid and email:
+                    success, message = check_in_ticket(ticket_uid, email, num_people)
+                    if success:
+                        st.success(f"✅ {message}")
+                    else:
+                        st.error(f"⚠️ {message}")
 
-        st.session_state["checkin_view"] = "cards"
+                    st.session_state["current_view_checkin"] = "cards"
+                else:
+                    st.error("⚠️ Please enter both Ticket UID and Email.")
 
 # ---------------------------
 # BLOCKCHAIN LEDGER TAB
