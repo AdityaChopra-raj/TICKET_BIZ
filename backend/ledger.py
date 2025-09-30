@@ -1,74 +1,61 @@
 import csv
 from pathlib import Path
-from datetime import datetime
 
 LEDGER_FILE = Path(__file__).parent / "ledger.csv"
-FIELDNAMES = ["timestamp", "event_id", "event_name", "first_name", "last_name", "student_id", "email", "num_tickets", "num_checked_in", "uid", "price"]
+
+# Ensure ledger file exists
+if not LEDGER_FILE.exists():
+    with open(LEDGER_FILE, "w", newline="", encoding="utf-8") as f:
+        writer = csv.DictWriter(f, fieldnames=[
+            "event_id", "event_name", "first_name", "last_name", "uid", "num_tickets"
+        ])
+        writer.writeheader()
 
 def get_ledger():
     ledger = []
-    if not LEDGER_FILE.exists():
-        return ledger
-    with open(LEDGER_FILE, newline='', encoding='utf-8') as f:
+    with open(LEDGER_FILE, "r", newline="", encoding="utf-8") as f:
         reader = csv.DictReader(f)
         for row in reader:
-            # Safely parse num_tickets
             try:
                 row["num_tickets"] = int(row.get("num_tickets", 0))
-            except ValueError:
-                row["num_tickets"] = 0
-
-            # Safely parse num_checked_in
-            try:
-                row["num_checked_in"] = int(row.get("num_checked_in", 0))
-            except ValueError:
-                row["num_checked_in"] = 0
-
-            ledger.append(row)
+                row["event_id"] = row.get("event_id", "")
+                row["event_name"] = row.get("event_name", "")
+                row["first_name"] = row.get("first_name", "")
+                row["last_name"] = row.get("last_name", "")
+                row["uid"] = row.get("uid", "")
+                ledger.append(row)
+            except Exception:
+                continue  # skip malformed row
     return ledger
 
-def save_ledger(ledger):
-    with open(LEDGER_FILE, 'w', newline='', encoding='utf-8') as f:
-        writer = csv.DictWriter(f, fieldnames=FIELDNAMES)
-        writer.writeheader()
-        writer.writerows(ledger)
-
-def add_transaction(event_id, event_name, first_name, last_name, student_id, email, num_tickets, uid, price=0):
-    ledger = get_ledger()
-    transaction = {
-        "timestamp": datetime.now().isoformat(),
-        "event_id": event_id,
-        "event_name": event_name,
-        "first_name": first_name,
-        "last_name": last_name,
-        "student_id": student_id,
-        "email": email,
-        "num_tickets": num_tickets,
-        "num_checked_in": 0,
-        "uid": uid,
-        "price": price
-    }
-    ledger.append(transaction)
-    save_ledger(ledger)
-
-def update_check_in(uid, num_checkin=1):
-    ledger = get_ledger()
-    updated = False
-    for row in ledger:
-        if row["uid"] == uid:
-            row["num_checked_in"] += num_checkin
-            updated = True
-            break
-    if updated:
-        save_ledger(ledger)
-    return updated
+def add_transaction(event_id, event_name, first_name, last_name, uid, num_tickets):
+    """Add a transaction to the ledger CSV."""
+    num_tickets = int(num_tickets)
+    with open(LEDGER_FILE, "a", newline="", encoding="utf-8") as f:
+        writer = csv.DictWriter(f, fieldnames=[
+            "event_id", "event_name", "first_name", "last_name", "uid", "num_tickets"
+        ])
+        writer.writerow({
+            "event_id": event_id,
+            "event_name": event_name,
+            "first_name": first_name,
+            "last_name": last_name,
+            "uid": uid,
+            "num_tickets": num_tickets
+        })
 
 def get_tickets_sold(event_id):
+    """Return the total number of tickets sold for a given event."""
     ledger = get_ledger()
-    total = sum(row["num_tickets"] for row in ledger if row["event_id"] == event_id)
+    total = sum(
+        row.get("num_tickets", 0)
+        for row in ledger
+        if row.get("event_id") == event_id
+    )
     return total
 
-def get_checked_in(event_id):
+def get_transactions_by_uid(uid):
+    """Return all transactions for a given UID."""
     ledger = get_ledger()
-    total = sum(row["num_checked_in"] for row in ledger if row["event_id"] == event_id)
-    return total
+    return [row for row in ledger if row.get("uid") == uid]
+
