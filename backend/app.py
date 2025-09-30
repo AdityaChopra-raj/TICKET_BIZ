@@ -1,81 +1,87 @@
 import streamlit as st
-from pathlib import Path
 from PIL import Image
-
-from ledger import add_transaction, get_ledger, check_in_transaction
+from pathlib import Path
 from events_data import EVENTS
-from email_utils import send_email  # ✅ Import email sender
+from ledger import add_transaction, get_ledger, check_in_ticket
+from email_utils import send_email
 
-# Assets folder
-ASSETS_DIR = Path(__file__).parent / "assets"
+# Paths
+BASE_DIR = Path(__file__).resolve().parent
+ASSETS_DIR = BASE_DIR / "assets"
 
-# ---------------------------
-# Helpers
-# ---------------------------
-def get_resized_image(image_path, size=(400, 225)):
-    """Resize event images to 16:9 ratio for cards."""
-    img = Image.open(image_path)
-    img = img.resize(size)
-    return img
+# Streamlit page config
+st.set_page_config(page_title="🎟 Ticket_Biz — Event Ticketing", layout="wide")
 
-def show_event_card(event, idx, tab_name):
-    """Render event card with Buy or Check In options depending on tab."""
+# -----------------------------
+# Utility function to resize images uniformly
+# -----------------------------
+def get_resized_image(img_path, width=320, height=180):
+    img = Image.open(img_path)
+    return img.resize((width, height))
+
+# -----------------------------
+# Show event card
+# -----------------------------
+def show_event_card(event, idx, tab_name="buy"):
+    # Image
     img_path = ASSETS_DIR / event["image"]
-    img = get_resized_image(img_path)
-
-    st.markdown(
-        f"""
-        <div class="event-card" style="border:1px solid #ddd; border-radius:10px; padding:15px; margin-bottom:20px;">
-            <h3 style="text-align:center;">{event['name']}</h3>
-        </div>
-        """,
-        unsafe_allow_html=True,
-    )
+    try:
+        img = get_resized_image(img_path)
+    except:
+        img = get_resized_image(ASSETS_DIR / "placeholder.jpg")
 
     st.image(img, use_container_width=True)
 
-    tickets_left = event["total_tickets"] - sum(
-        tx["tickets"] for tx in get_ledger() if tx["event"] == event["name"]
-    )
-    st.markdown(f"**Available Tickets:** {tickets_left}")
-    st.write(event["description"])
+    # Available badge below image
+    tickets_sold = sum([tx["num_tickets"] for tx in get_ledger() if tx["event"] == event["name"]])
+    tickets_left = max(event["total_tickets"] - tickets_sold, 0)
+    available_text = f"AVAILABLE: {tickets_left} tickets"
+    if tickets_left == 0:
+        available_text = "FULL"
+    st.markdown(f"<div style='color: {'green' if tickets_left>0 else 'red'}; font-weight:bold;'>{available_text}</div>", unsafe_allow_html=True)
 
-    if tab_name == "buy":
-        if st.button(f"Buy for {event['name']}", key=f"buy_btn_{tab_name}_{idx}"):
-            st.session_state["selected_event"] = event["name"]
+    # Event info
+    st.markdown(f"### {event['name']}")
+    st.markdown(f"{event['description']}")
+    st.markdown(f"📅 {event['date']}  |  📍 {event['venue']}  |  🎟️ {tickets_left}/{event['total_tickets']} tickets left  |  💰 ₹{event['price']}")
+
+    # Buttons
+    buy_key = f"buy_btn_{tab_name}_{idx}"
+    checkin_key = f"checkin_btn_{tab_name}_{idx}"
+
+    col1, col2 = st.columns(2)
+    with col1:
+        if st.button("Buy Ticket", key=buy_key):
             st.session_state["current_view"] = "buy_form"
-
-    elif tab_name == "checkin":
-        if st.button(f"Check In for {event['name']}", key=f"checkin_btn_{tab_name}_{idx}"):
             st.session_state["selected_event"] = event["name"]
-            st.session_state["current_view"] = "checkin_form"
+    with col2:
+        if st.button("Check In", key=checkin_key):
+            st.session_state["current_view_checkin"] = "checkin_form"
+            st.session_state["selected_event"] = event["name"]
 
-
-# ---------------------------
-# Streamlit UI
-# ---------------------------
-st.set_page_config(page_title="TicketBiz", layout="wide")
-
-# Tabs navigation
+# -----------------------------
+# Tabs
+# -----------------------------
 tabs = ["Home", "Buy Ticket", "Check In", "Blockchain Ledger"]
 selected_tab = st.tabs(tabs)
 
-# ---------------------------
+# -----------------------------
 # HOME TAB
-# ---------------------------
+# -----------------------------
 with selected_tab[0]:
-    st.title("🎟️ TicketBiz Platform")
-    st.write("Welcome to the decentralized event ticketing system.")
+    st.title("🎟 Ticket_Biz — Event Ticketing")
+    st.markdown(
+        """
+        Welcome to **Ticket_Biz**, your one-stop platform for event ticketing powered by Blockchain Technology. 
+        Buy tickets, check in securely, and track your ticket ledger with transparency.
+        """)
+    st.markdown("---")
 
-    for idx, event in enumerate(EVENTS):
-        show_event_card(event, idx, tab_name="home")
-
-# ---------------------------
+# -----------------------------
 # BUY TICKET TAB
-# ---------------------------
+# -----------------------------
 with selected_tab[1]:
     st.header("Buy Tickets")
-
     if "current_view" not in st.session_state:
         st.session_state["current_view"] = "cards"
 
@@ -84,7 +90,6 @@ with selected_tab[1]:
             show_event_card(event, idx, tab_name="buy")
 
     elif st.session_state["current_view"] == "buy_form":
-        # ✅ Use event_name from session_state instead of event['name']
         event_name = st.session_state["selected_event"]
         st.subheader(f"Buy Tickets for {event_name}")
 
@@ -101,39 +106,33 @@ with selected_tab[1]:
                     uid = add_transaction(
                         event_name, first_name, last_name, student_id, num_tickets, email
                     )
-
-                    # Send Ticket UID via email
                     subject = f"Your Ticket for {event_name}"
                     body = (
                         f"Hello {first_name} {last_name},\n\n"
                         f"Thank you for purchasing {num_tickets} ticket(s) for {event_name}.\n"
                         f"Your unique Ticket UID is: {uid}\n\n"
-                        f"Please save this UID to check in at the event.\n\n"
+                        "Please save this UID to check in at the event.\n\n"
                         "Best regards,\nTicketBiz Team"
                     )
-
                     try:
-                        send_email(to=email, subject=subject, body=body)
+                        send_email(email, subject, body)
                         st.success(
                             f"✅ Purchase successful! Your Ticket UID is: **{uid}**. "
                             f"An email has been sent to **{email}** with your ticket details."
                         )
                     except Exception as e:
                         st.warning(
-                            f"⚠️ Purchase successful! Your Ticket UID is: **{uid}**, "
-                            f"but the email could not be sent. Error: {e}"
+                            f"⚠️ Purchase successful! UID: **{uid}**, but email failed. Error: {e}"
                         )
-
                     st.session_state["current_view"] = "cards"
                 else:
                     st.error("⚠️ Please fill in all fields before confirming.")
 
-# ---------------------------
+# -----------------------------
 # CHECK IN TAB
-# ---------------------------
+# -----------------------------
 with selected_tab[2]:
     st.header("Check In")
-
     if "current_view_checkin" not in st.session_state:
         st.session_state["current_view_checkin"] = "cards"
 
@@ -142,7 +141,6 @@ with selected_tab[2]:
             show_event_card(event, idx, tab_name="checkin")
 
     elif st.session_state["current_view_checkin"] == "checkin_form":
-        # ✅ Use event_name from session_state
         event_name = st.session_state["selected_event"]
         st.subheader(f"Check In for {event_name}")
 
@@ -161,33 +159,22 @@ with selected_tab[2]:
                         st.success(f"✅ {message}")
                     else:
                         st.error(f"⚠️ {message}")
-
                     st.session_state["current_view_checkin"] = "cards"
                 else:
                     st.error("⚠️ Please enter both Ticket UID and Email.")
 
-# ---------------------------
+# -----------------------------
 # BLOCKCHAIN LEDGER TAB
-# ---------------------------
+# -----------------------------
 with selected_tab[3]:
     st.header("Blockchain Ledger")
     ledger = get_ledger()
     if ledger:
-        for tx in ledger:
+        for record in ledger:
             st.markdown(
-                f"""
-                <div style="border:1px solid #ddd; border-radius:10px; padding:10px; margin-bottom:10px;">
-                    <b>Event:</b> {tx['event']}<br>
-                    <b>Name:</b> {tx['first_name']} {tx['last_name']}<br>
-                    <b>Student ID:</b> {tx['student_id']}<br>
-                    <b>Email:</b> {tx['email']}<br>
-                    <b>Tickets:</b> {tx['tickets']} (Checked in: {tx['checked_in']})<br>
-                    <b>Ticket UID:</b> {tx['uid']}<br>
-                    <b>Timestamp:</b> {tx['timestamp']}<br>
-                    <b>Hash:</b> {tx['hash']}
-                </div>
-                """,
-                unsafe_allow_html=True,
+                f"**Event:** {record['event']}  |  **UID:** {record['uid']}  |  "
+                f"**Buyer:** {record['first_name']} {record['last_name']}  |  "
+                f"**Tickets:** {record['num_tickets']}  |  **Email:** {record['email']}"
             )
     else:
-        st.info("No transactions recorded yet.")
+        st.info("Ledger is empty.")
