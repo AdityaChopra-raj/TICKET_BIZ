@@ -1,151 +1,184 @@
-# app.py
-
 import streamlit as st
 from pathlib import Path
 from PIL import Image
-from events_data import EVENTS
-from ledger import add_transaction, get_ledger, check_in_transaction
 
-# Path to assets
+from ledger import add_transaction, get_ledger, check_in_transaction
+from events_data import EVENTS
+from email_utils import send_email  # ✅ Import email sender
+
+# Assets folder
 ASSETS_DIR = Path(__file__).parent / "assets"
 
-# ========== Helpers ==========
-def get_resized_image(img_path, width=320, height=180):
-    """Resize images safely with fallback placeholder."""
-    try:
-        img = Image.open(img_path)
-    except Exception:
-        img = Image.open(ASSETS_DIR / "placeholder.jpg")
-    return img.resize((width, height))
+# ---------------------------
+# Helpers
+# ---------------------------
+def get_resized_image(image_path, size=(400, 225)):
+    """Resize event images to 16:9 ratio for cards."""
+    img = Image.open(image_path)
+    img = img.resize(size)
+    return img
 
-def show_event_card(event, tab_name, idx):
-    """Render a single event card in the grid."""
-    col = st.container()
-    with col:
-        img = get_resized_image(ASSETS_DIR / event["image"])
-        st.image(img, use_container_width=True)
+def show_event_card(event, idx, tab_name):
+    """Render event card with Buy or Check In options depending on tab."""
+    img_path = ASSETS_DIR / event["image"]
+    img = get_resized_image(img_path)
 
-        # Safe fallback for total tickets
-        total_tickets = event.get("total_tickets", 100)
-        tickets_left = total_tickets - sum(
-            int(tx["tickets"]) for tx in get_ledger() if tx["event"] == event["name"]
-        )
-
-        # Card content
-        st.markdown(f"### {event['name']}")
-        st.write(event["description"])
-        st.write(f"📅 {event['date']}")
-        st.write(f"📍 {event['location']}")
-        st.write(f"🎟️ {tickets_left}/{total_tickets} tickets left")
-        st.write(f"💰 ₹{event['price']} per ticket")
-
-        # Action buttons
-        if tab_name == "buy":
-            if st.button("Select Event to Buy", key=f"buy_btn_{idx}"):
-                st.session_state["selected_event"] = event
-        elif tab_name == "checkin":
-            if st.button("Select Event to Check In", key=f"checkin_btn_{idx}"):
-                st.session_state["selected_event"] = event
-
-
-# ========== Main App ==========
-st.set_page_config(page_title="🎟 Ticket_Biz", layout="wide")
-
-st.title("🎟 Ticket_Biz — Event Ticketing")
-tabs = st.tabs(["🏠 Home", "🛒 Buy Ticket", "✅ Check In", "🔗 Blockchain"])
-
-# ---------- HOME ----------
-with tabs[0]:
     st.markdown(
-        "<h2 style='text-align: center; color: white;'>Welcome to Ticket_Biz</h2>",
+        f"""
+        <div class="event-card" style="border:1px solid #ddd; border-radius:10px; padding:15px; margin-bottom:20px;">
+            <h3 style="text-align:center;">{event['name']}</h3>
+        </div>
+        """,
         unsafe_allow_html=True,
     )
-    st.write("Your trusted blockchain-powered event ticketing platform.")
 
-# ---------- BUY TICKET ----------
-with tabs[1]:
-    st.header("Trending Events - Buy Tickets")
+    st.image(img, use_container_width=True)
 
-    # Grid for events
-    cols = st.columns(3)
+    tickets_left = event["total_tickets"] - sum(
+        tx["tickets"] for tx in get_ledger() if tx["event"] == event["name"]
+    )
+    st.markdown(f"**Available Tickets:** {tickets_left}")
+    st.write(event["description"])
+
+    if tab_name == "buy":
+        if st.button(f"Buy for {event['name']}", key=f"buy_btn_{tab_name}_{idx}"):
+            st.session_state["selected_event"] = event["name"]
+            st.session_state["current_view"] = "buy_form"
+
+    elif tab_name == "checkin":
+        if st.button(f"Check In for {event['name']}", key=f"checkin_btn_{tab_name}_{idx}"):
+            st.session_state["selected_event"] = event["name"]
+            st.session_state["current_view"] = "checkin_form"
+
+
+# ---------------------------
+# Streamlit UI
+# ---------------------------
+st.set_page_config(page_title="TicketBiz", layout="wide")
+
+# Tabs navigation
+tabs = ["Home", "Buy Ticket", "Check In", "Blockchain Ledger"]
+selected_tab = st.tabs(tabs)
+
+# ---------------------------
+# HOME TAB
+# ---------------------------
+with selected_tab[0]:
+    st.title("🎟️ TicketBiz Platform")
+    st.write("Welcome to the decentralized event ticketing system.")
+
     for idx, event in enumerate(EVENTS):
-        with cols[idx % 3]:
-            show_event_card(event, tab_name="buy", idx=idx)
+        show_event_card(event, idx, tab_name="home")
 
-    # Show buy form if event selected
-    if "selected_event" in st.session_state and st.session_state["selected_event"]:
-        event = st.session_state["selected_event"]
-        st.subheader(f"Buy Tickets for {event['name']}")
+# ---------------------------
+# BUY TICKET TAB
+# ---------------------------
+with selected_tab[1]:
+    st.header("Buy Tickets")
 
-        first_name = st.text_input("First Name")
-        last_name = st.text_input("Last Name")
-        student_id = st.text_input("Student ID")
-        email = st.text_input("Email")
-        num_tickets = st.number_input("Number of Tickets", min_value=1, max_value=15, step=1)
+    if "current_view" not in st.session_state:
+        st.session_state["current_view"] = "cards"
 
-        # Dynamic total cost
-        total_cost = num_tickets * event["price"]
-        st.write(f"💰 **Total Cost: ₹{total_cost}**")
+    if st.session_state["current_view"] == "cards":
+        for idx, event in enumerate(EVENTS):
+            show_event_card(event, idx, tab_name="buy")
 
-        if st.button("Confirm Purchase"):
-            if all([first_name, last_name, student_id, email, num_tickets]):
-                add_transaction(
-                    event["name"], first_name, last_name, student_id, num_tickets
-                )
-                st.success(
-                    f"🎉 Tickets purchased successfully for {event['name']}! "
-                    f"Total Cost: ₹{total_cost}"
-                )
-                st.session_state["selected_event"] = None
-            else:
-                st.error("⚠️ Please fill in all details before confirming.")
+    elif st.session_state["current_view"] == "buy_form":
+        event_name = st.session_state["selected_event"]
+        st.subheader(f"Buy Tickets for {event_name}")
 
-# ---------- CHECK IN ----------
-with tabs[2]:
+        with st.form("buy_ticket_form"):
+            first_name = st.text_input("First Name")
+            last_name = st.text_input("Last Name")
+            student_id = st.text_input("Student ID")
+            email = st.text_input("Email")
+            num_tickets = st.number_input("Number of Tickets", min_value=1, step=1)
+
+            submitted = st.form_submit_button("Confirm Purchase")
+            if submitted:
+                if first_name and last_name and student_id and email and num_tickets:
+                    uid = add_transaction(
+                        event_name, first_name, last_name, student_id, num_tickets, email
+                    )
+
+                    # ✅ Send Ticket UID via email
+                    subject = f"Your Ticket for {event_name}"
+                    body = (
+                        f"Hello {first_name} {last_name},\n\n"
+                        f"Thank you for purchasing {num_tickets} ticket(s) for {event_name}.\n"
+                        f"Your unique Ticket UID is: {uid}\n\n"
+                        f"Please save this UID to check in at the event.\n\n"
+                        "Best regards,\nTicketBiz Team"
+                    )
+
+                    try:
+                        send_email(to=email, subject=subject, body=body)
+                        st.success(
+                            f"✅ Purchase successful! Your Ticket UID is: **{uid}**. "
+                            f"An email has been sent to **{email}** with your ticket details."
+                        )
+                    except Exception as e:
+                        st.warning(
+                            f"⚠️ Purchase successful! Your Ticket UID is: **{uid}**, "
+                            f"but the email could not be sent. Error: {e}"
+                        )
+
+                    st.session_state["current_view"] = "cards"
+                else:
+                    st.error("⚠️ Please fill in all fields before confirming.")
+
+# ---------------------------
+# CHECK IN TAB
+# ---------------------------
+with selected_tab[2]:
     st.header("Check In")
 
-    cols = st.columns(3)
-    for idx, event in enumerate(EVENTS):
-        with cols[idx % 3]:
-            show_event_card(event, tab_name="checkin", idx=idx)
+    if "checkin_view" not in st.session_state:
+        st.session_state["checkin_view"] = "cards"
 
-    if "selected_event" in st.session_state and st.session_state["selected_event"]:
-        event = st.session_state["selected_event"]
-        st.subheader(f"Check In for {event['name']}")
+    if st.session_state["checkin_view"] == "cards":
+        for idx, event in enumerate(EVENTS):
+            show_event_card(event, idx, tab_name="checkin")
 
-        ticket_uid = st.text_input("Enter Ticket UID")
-        check_in_count = st.number_input("Number of People Checking In", min_value=1, max_value=15, step=1)
+    elif st.session_state["checkin_view"] == "checkin_form":
+        event_name = st.session_state["selected_event"]
+        st.subheader(f"Check In for {event_name}")
 
-        if st.button("Confirm Check In"):
-            if ticket_uid:
-                success = check_in_transaction(ticket_uid, check_in_count)
-                if success:
-                    st.success(f"✅ {check_in_count} people checked in successfully!")
-                    st.session_state["selected_event"] = None
+        with st.form("checkin_form"):
+            ticket_uid = st.text_input("Enter Ticket UID")
+            num_people = st.number_input("Number of People Checking In", min_value=1, step=1)
+            submitted = st.form_submit_button("Confirm Check In")
+
+            if submitted:
+                if check_in_transaction(ticket_uid, num_people):
+                    st.success("✅ Check-in successful!")
                 else:
-                    st.error("❌ Invalid Ticket UID or check-in failed.")
-            else:
-                st.error("⚠️ Please enter your Ticket UID.")
+                    st.error("❌ Invalid UID or exceeding purchased tickets.")
 
-# ---------- BLOCKCHAIN ----------
-with tabs[3]:
+        st.session_state["checkin_view"] = "cards"
+
+# ---------------------------
+# BLOCKCHAIN LEDGER TAB
+# ---------------------------
+with selected_tab[3]:
     st.header("Blockchain Ledger")
     ledger = get_ledger()
-
-    if not ledger:
-        st.info("No transactions recorded yet.")
-    else:
+    if ledger:
         for tx in ledger:
             st.markdown(
                 f"""
-                <div style="background:#111418; padding:15px; border-radius:10px; margin-bottom:10px;">
-                    <b>Event:</b> {tx['event']} <br>
-                    <b>Name:</b> {tx['first_name']} {tx['last_name']} <br>
-                    <b>Student ID:</b> {tx['student_id']} <br>
-                    <b>Email:</b> {tx['email']} <br>
-                    <b>Tickets:</b> {tx['tickets']} <br>
-                    <b>Transaction Hash:</b> {tx['hash']}
+                <div style="border:1px solid #ddd; border-radius:10px; padding:10px; margin-bottom:10px;">
+                    <b>Event:</b> {tx['event']}<br>
+                    <b>Name:</b> {tx['first_name']} {tx['last_name']}<br>
+                    <b>Student ID:</b> {tx['student_id']}<br>
+                    <b>Email:</b> {tx['email']}<br>
+                    <b>Tickets:</b> {tx['tickets']} (Checked in: {tx['checked_in']})<br>
+                    <b>Ticket UID:</b> {tx['uid']}<br>
+                    <b>Timestamp:</b> {tx['timestamp']}<br>
+                    <b>Hash:</b> {tx['hash']}
                 </div>
                 """,
                 unsafe_allow_html=True,
             )
+    else:
+        st.info("No transactions recorded yet.")
