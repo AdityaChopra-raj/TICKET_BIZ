@@ -56,7 +56,7 @@ EVENTS = [
         "id": 6,
         "name": "Tech Conference",
         "description": "Attend sessions by industry leaders and network with tech enthusiasts.",
-        "image": "placeholder.jpg",
+        "image": "tech.jpeg",
         "date": "2025-10-25 09:00",
         "venue": "Convention Center, Ludhiana",
         "total_tickets": 180,
