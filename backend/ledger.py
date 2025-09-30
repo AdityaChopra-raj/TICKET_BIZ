@@ -1,64 +1,100 @@
+# ledger.py
+
 import csv
 from pathlib import Path
-import uuid
+from datetime import datetime
 
 LEDGER_FILE = Path(__file__).parent / "ledger.csv"
 
-def get_ledger():
-    """Read the ledger CSV and return a list of transactions."""
-    if not LEDGER_FILE.exists():
-        return []
+# Ensure ledger file exists
+if not LEDGER_FILE.exists():
+    with open(LEDGER_FILE, mode="w", newline="", encoding="utf-8") as f:
+        writer = csv.DictWriter(f, fieldnames=[
+            "timestamp",
+            "event_id",
+            "event_name",
+            "first_name",
+            "last_name",
+            "student_id",
+            "email",
+            "num_tickets",
+            "num_checked_in"
+        ])
+        writer.writeheader()
 
-    ledger = []
-    with open(LEDGER_FILE, newline="", encoding="utf-8") as csvfile:
-        reader = csv.DictReader(csvfile)
+
+def add_transaction(event_id, event_name, first_name, last_name, student_id, email, num_tickets):
+    """Add a new ticket purchase transaction to the ledger."""
+    now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    with open(LEDGER_FILE, mode="a", newline="", encoding="utf-8") as f:
+        writer = csv.DictWriter(f, fieldnames=[
+            "timestamp",
+            "event_id",
+            "event_name",
+            "first_name",
+            "last_name",
+            "student_id",
+            "email",
+            "num_tickets",
+            "num_checked_in"
+        ])
+        writer.writerow({
+            "timestamp": now,
+            "event_id": event_id,
+            "event_name": event_name,
+            "first_name": first_name,
+            "last_name": last_name,
+            "student_id": student_id,
+            "email": email,
+            "num_tickets": num_tickets,
+            "num_checked_in": 0
+        })
+
+
+def check_in(uid_email_mapping, tickets_to_check_in=1):
+    """
+    Update ledger for check-ins.
+    uid_email_mapping: tuple (student_id, email)
+    tickets_to_check_in: number of tickets to check in
+    """
+    student_id, email = uid_email_mapping
+    updated_rows = []
+    with open(LEDGER_FILE, mode="r", newline="", encoding="utf-8") as f:
+        reader = csv.DictReader(f)
         for row in reader:
-            try:
-                row["num_tickets"] = int(row.get("num_tickets", 0) or 0)
-            except ValueError:
-                row["num_tickets"] = 0
-            try:
-                row["checked_in"] = int(row.get("checked_in", 0) or 0)
-            except ValueError:
-                row["checked_in"] = 0
+            if row["student_id"] == student_id and row["email"] == email:
+                already_checked = int(row["num_checked_in"])
+                total_tickets = int(row["num_tickets"])
+                can_check_in = min(tickets_to_check_in, total_tickets - already_checked)
+                row["num_checked_in"] = already_checked + can_check_in
+            updated_rows.append(row)
+
+    with open(LEDGER_FILE, mode="w", newline="", encoding="utf-8") as f:
+        writer = csv.DictWriter(f, fieldnames=reader.fieldnames)
+        writer.writeheader()
+        writer.writerows(updated_rows)
+
+
+def get_ledger():
+    """Return the entire ledger as a list of dicts."""
+    ledger = []
+    with open(LEDGER_FILE, mode="r", newline="", encoding="utf-8") as f:
+        reader = csv.DictReader(f)
+        for row in reader:
+            row["num_tickets"] = int(row["num_tickets"])
+            row["num_checked_in"] = int(row["num_checked_in"])
+            row["event_id"] = int(row["event_id"])
             ledger.append(row)
     return ledger
 
-def add_transaction(event, first_name, last_name, student_id, email, num_tickets):
-    """Add a new transaction to the ledger."""
-    uid = str(uuid.uuid4())
-    header = ["uid", "event", "first_name", "last_name", "student_id", "email", "num_tickets", "checked_in"]
 
-    # Create file with header if it doesn't exist
-    file_exists = LEDGER_FILE.exists()
-    with open(LEDGER_FILE, "a", newline="", encoding="utf-8") as f:
-        writer = csv.writer(f)
-        if not file_exists or LEDGER_FILE.stat().st_size == 0:
-            writer.writerow(header)
-        writer.writerow([uid, event, first_name, last_name, student_id, email, int(num_tickets), 0])
-
-    return uid
-
-def check_in_ticket(uid, num_people=1):
-    """Update checked_in count for a ticket UID."""
+def get_tickets_sold(event_id):
+    """Return total tickets sold for a specific event."""
     ledger = get_ledger()
-    updated = False
-    for row in ledger:
-        if row["uid"] == uid:
-            available = row["num_tickets"] - row["checked_in"]
-            if available >= num_people:
-                row["checked_in"] += num_people
-                updated = True
-            else:
-                raise ValueError(f"Not enough remaining tickets to check in {num_people} people.")
-            break
-    else:
-        raise ValueError("Ticket UID not found.")
+    return sum(row["num_tickets"] for row in ledger if row["event_id"] == event_id)
 
-    # Rewrite the ledger CSV
-    with open(LEDGER_FILE, "w", newline="", encoding="utf-8") as f:
-        writer = csv.DictWriter(f, fieldnames=ledger[0].keys() if ledger else [])
-        writer.writeheader()
-        writer.writerows(ledger)
 
-    return updated
+def get_checked_in(event_id):
+    """Return total checked-in count for a specific event."""
+    ledger = get_ledger()
+    return sum(row["num_checked_in"] for row in ledger if row["event_id"] == event_id)
