@@ -1,12 +1,12 @@
 # events_data.py
-# List of event dictionaries
+# Central place to configure all event details
 
 EVENTS = [
     {
         "id": 1,
         "name": "Navratri Garba Night",
         "description": "Join us for an electrifying Garba night filled with traditional dances and music.",
-        "image": "navratri.jpeg.avif",
+        "image": "navratri.jpeg", # Corrected from .avif for cross-platform compatibility
         "date": "2025-10-10 19:00",
         "venue": "Community Hall, Ludhiana",
         "total_tickets": 150,
