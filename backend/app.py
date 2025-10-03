@@ -29,22 +29,27 @@ if 'active_tab' not in st.session_state:
 if 'checkin_record' not in st.session_state:
     st.session_state.checkin_record = None # Stores found record during check-in flow
 
-# --- CSS Styling (Assumes styles.css exists) ---
+# --- CSS Styling (Ensure styles.css is present) ---
 try:
     with open(Path(__file__).parent / "styles.css") as f:
         st.markdown(f"<style>{f.read()}</style>", unsafe_allow_html=True)
 except FileNotFoundError:
-    st.error("styles.css not found. Ensure it is in the same directory.")
+    st.warning("styles.css not found. The app will use default styles.")
 
 # --- Utility Functions ---
 
 def get_resized_image(img_name, width=320, height=180):
-    """Opens and resizes an image from the assets directory."""
+    """Opens and optionally resizes an image from the assets directory."""
     img_path = ASSETS_DIR / img_name
     try:
         img = Image.open(img_path)
         return img.resize((width, height))
     except FileNotFoundError:
+        # Fallback to a placeholder image if needed
+        # Assuming 'placeholder.jpg' is available in assets/
+        placeholder_path = ASSETS_DIR / "placeholder.jpg"
+        if placeholder_path.exists():
+             return Image.open(placeholder_path).resize((width, height))
         return None 
 
 def get_current_events():
@@ -77,20 +82,21 @@ def show_event_card(event, tab_name, idx):
     action_tab = "Buy Ticket" if tab_name == "buy" else "Check-In"
     
     # Image data base64 embedding (optimized for speed)
-    if f"img_data_{idx}" not in st.session_state:
+    img_data_key = f"img_data_{idx}"
+    if img_data_key not in st.session_state:
         img_object = get_resized_image(event["image"])
         if img_object:
             import base64
             from io import BytesIO
             buffered = BytesIO()
             img_object.save(buffered, format="JPEG")
-            st.session_state[f"img_data_{idx}"] = base64.b64encode(buffered.getvalue()).decode()
+            st.session_state[img_data_key] = base64.b64encode(buffered.getvalue()).decode()
         else:
-            st.session_state[f"img_data_{idx}"] = "" # Fallback
+            st.session_state[img_data_key] = "" # Fallback
 
     card_html = f"""
     <div class='event-card'>
-        <img src='data:image/jpeg;base64,{st.session_state.get(f"img_data_{idx}")}' alt='{event["name"]}'>
+        <img src='data:image/jpeg;base64,{st.session_state.get(img_data_key)}' alt='{event["name"]}'>
         <div style="padding: 10px;">
             <div class="{tag_class}">{tag_text}</div>
             <h3 style="margin: 5px 0 0 0; color:#e50914;">{event["name"]}</h3>
@@ -103,7 +109,7 @@ def show_event_card(event, tab_name, idx):
     
     st.markdown(card_html, unsafe_allow_html=True)
     
-    # Button placement
+    # Button placement (with hover effect from styles.css)
     if available > 0 or tab_name == "checkin":
         st.button(
             button_text, 
@@ -116,15 +122,15 @@ def show_event_card(event, tab_name, idx):
 
 
 # --- Tab Definition ---
-tabs = st.tabs(["Home", "Buy Ticket", "Check-In", "Logs"]) # Renamed Blockchain to Logs
+tabs = st.tabs(["Home", "Buy Ticket", "Check-In", "Logs"]) # Logs replaces Blockchain
 home_tab, buy_tab, checkin_tab, logs_tab = tabs
 
 # Manually control which tab is active 
 try:
     active_index = ["Home", "Buy Ticket", "Check-In", "Logs"].index(st.session_state.active_tab)
-    if active_index != 0: 
-        st.session_state["st_tab_idx"] = active_index
-except ValueError:
+    # Using a minor hack to control active tab after rerun
+    st.session_state["st_tab_idx"] = active_index 
+except:
     st.session_state["st_tab_idx"] = 0 
 
 
@@ -144,15 +150,11 @@ with buy_tab:
     event_to_buy = next((e for e in CURRENT_EVENTS if e["id"] == selected_id), None)
     
     if event_to_buy and st.session_state.active_tab == "Buy Ticket":
-        # --- SHOW PURCHASE FORM ---
+        
         tickets_sold = get_tickets_sold(event_to_buy["id"])
         available = event_to_buy["total_tickets"] - tickets_sold
         
         st.subheader(f"Purchase Tickets for: {event_to_buy['name']}")
-        
-        # Display event summary (optional, remove for brevity if needed)
-        # ... 
-
         st.markdown("---")
         
         with st.form("purchase_form"):
@@ -163,7 +165,7 @@ with buy_tab:
             
             col_email, col_phone = st.columns(2)
             email = col_email.text_input("Email Address", key="buy_email")
-            phone = col_phone.text_input("Phone Number", key="buy_phone") # Added Phone
+            phone = col_phone.text_input("Phone Number", key="buy_phone")
             
             num_tickets = st.number_input(
                 "Number of Tickets to Buy", 
@@ -179,51 +181,39 @@ with buy_tab:
                 if all(required_fields) and num_tickets <= available:
                     
                     # 1. Generate Blockchain Hash and UID
-                    data_to_hash = f"{event_to_buy['id']}|{email.lower()}|{phone}|{num_tickets}|{time.time()}"
+                    timestamp = time.time()
+                    data_to_hash = f"{event_to_buy['id']}|{email.lower()}|{phone}|{num_tickets}|{timestamp}"
                     hash_value = hashlib.sha256(data_to_hash.encode()).hexdigest()
+                    uid = hash_value[:10].upper() # Ticket_ID
                     
-                    # UID is a shortened version of the hash
-                    uid = hash_value[:10].upper()
-                    
-                    # 2. Add to Ledger (Blockchain simulation)
+                    # 2. Add to Ledger (Simulates Block creation)
                     add_transaction(
-                        event_to_buy["id"], 
-                        event_to_buy["name"], 
-                        first_name, 
-                        last_name, 
-                        email, 
-                        phone,
-                        uid, 
-                        hash_value,
-                        num_tickets
+                        event_to_buy["id"], event_to_buy["name"], first_name, last_name, 
+                        email, phone, uid, hash_value, num_tickets
                     )
                     
-                    # 3. Send Email (Uses the updated email_utils)
+                    # 3. Send Email
                     email_content = f"""
                     Dear {first_name} {last_name},
-
-                    Thank you for your purchase!
                     
+                    Thank you for your purchase!
                     Event: {event_to_buy['name']}
-                    Date: {event_to_buy['date']}
                     Tickets Purchased: {num_tickets}
                     
                     Your unique Ticket ID (UID) for check-in is: {uid}
                     Your Phone Number: {phone}
                     
                     Transaction Hash (Proof of Purchase): {hash_value}
-                    
-                    Please save this email for check-in.
                     """
-                    # The send_email function will show st.success or st.error
+                    # st.success is shown inside email_utils.py after successful send
                     send_email(email, f"Ticket Confirmation: {event_to_buy['name']} | UID: {uid}", email_content)
                     
                     # 4. Final Success Message
                     st.success(f"🥳 Purchase Successful! Your Ticket UID is: **{uid}**.")
                     
-                    # Reset state
+                    # Reset state and switch to Logs tab
                     st.session_state.selected_event = None
-                    st.session_state.active_tab = "Logs" # Direct to logs to see the hash
+                    st.session_state.active_tab = "Logs" 
                     st.rerun()
 
                 elif num_tickets > available:
@@ -252,8 +242,8 @@ with checkin_tab:
         # --- SHOW CHECK-IN FORM (Search by 3 fields) ---
         st.subheader(f"Check-In for: {event_to_checkin['name']}")
         
-        with st.form("checkin_search_form"):
-            st.write("Enter ONE of the following credentials to find the ticket:")
+        with st.form("checkin_form_main"):
+            st.write("Enter **ONE** of the following credentials to find the ticket:")
             uid_input = st.text_input("Ticket UID", key="checkin_uid_input")
             email_input = st.text_input("Customer Email", key="checkin_email_input")
             phone_input = st.text_input("Phone Number", key="checkin_phone_input")
@@ -263,20 +253,18 @@ with checkin_tab:
             if search_button:
                 st.session_state.checkin_record = None
                 
-                # Search Logic: Check by UID, Email, OR Phone
                 ledger = get_ledger()
                 
-                # Use filters to find the FIRST match for the event
+                # Search Logic: Check by UID, Email, OR Phone for the selected event
                 match = next((
                     r for r in ledger 
                     if str(r.get("event_id")) == str(event_to_checkin["id"]) and 
-                       (r.get("uid", "").upper() == uid_input.upper() if uid_input else False) or
-                       (r.get("email", "").lower() == email_input.lower() if email_input else False) or
-                       (r.get("phone") == phone_input if phone_input else False)
+                       ((r.get("uid", "").upper() == uid_input.upper() if uid_input else False) or
+                        (r.get("email", "").lower() == email_input.lower() if email_input else False) or
+                        (r.get("phone") == phone_input if phone_input else False))
                 ), None)
 
                 if match:
-                    # Check if all tickets have been used up
                     checked_in = match.get("checked_in", 0)
                     total_purchased = match["num_tickets"]
                     
@@ -284,7 +272,7 @@ with checkin_tab:
                          st.error("Check-In failed: All tickets for this transaction have already been checked in.")
                     else:
                         st.session_state.checkin_record = match
-                        st.success(f"Ticket Found! Purchased: {total_purchased}, Already Checked In: {checked_in}. Ready for check-in.")
+                        st.success(f"Ticket Found! Purchased: {total_purchased}, Checked In: {checked_in}. Ready for check-in.")
                 else:
                     st.error("Ticket not found or does not match this event.")
 
@@ -297,7 +285,7 @@ with checkin_tab:
                 st.write(f"**Transaction:** {record['first_name']} {record['last_name']} ({record['uid']})")
                 st.write(f"**Remaining Check-ins Allowed:** {available_to_checkin}")
 
-                # This allows the customer to check in only 3 of their 10 tickets
+                # This allows partial check-in (e.g., 3 of 10 tickets)
                 num_checkin = st.number_input(
                     "Number of People Checking In Now", 
                     min_value=1, 
@@ -306,10 +294,10 @@ with checkin_tab:
                     key="partial_checkin_num"
                 )
                 
-                confirm_checkin = st.form_submit_button("Confirm Check-In", type="primary")
+                confirm_checkin = st.form_submit_button("Confirm Final Check-In", type="primary")
 
                 if confirm_checkin:
-                    # 1. Update Ledger (Calls ledger.py to increment 'checked_in' count)
+                    # 1. Update Ledger 
                     update_checkin_status(record["uid"], num_checkin)
                     
                     # 2. Success Message
@@ -336,7 +324,7 @@ with checkin_tab:
 # --- Logs Tab Content ---
 with logs_tab:
     st.subheader("Transaction Logs (Hash Verification)")
-    st.info("Every purchase is recorded with an SHA-256 Hash. This simulates a secure log of transactions.")
+    st.info("Every purchase is recorded with an SHA-256 Hash and number of tickets sold. This simulates a secure, verifiable log.")
     ledger = get_ledger()
     if ledger:
         for record in reversed(ledger):
@@ -350,7 +338,7 @@ with logs_tab:
                         <span style='color: #888;'>Tickets Used: {record.get('checked_in', 0)} / {record.get('num_tickets')}</span>
                     </div>
                     <b>Event:</b> {record.get('event_name')}<br>
-                    <b>Customer:</b> {record.get('first_name')} {record.get('last_name')}<br>
+                    <b>Customer:</b> {record.get('first_name')} {record.get('last_name')} ({record.get('email')})<br>
                     <b>Tickets Purchased:</b> {record.get('num_tickets')}<br>
                     <b>UID:</b> {record.get('uid')}<br>
                     <span style='color: #888; word-break: break-all;'><b>Hash (SHA-256):</b> {record.get('hash', 'N/A')}</span>
