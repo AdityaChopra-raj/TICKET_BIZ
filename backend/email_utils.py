@@ -24,11 +24,12 @@ def send_email(to_address, subject, content):
     
     # 2. Send the message
     try:
-        server = smtplib.SMTP("smtp.gmail.com", 587)
+        server = smtplib.SMTP("smtp.gmail.com", 587) # Standard SMTP host/port for Gmail
         server.starttls()
         server.login(EMAIL_ADDRESS, EMAIL_PASSWORD)
         server.send_message(msg)
         server.quit()
         st.success(f"Confirmation email successfully sent to {to_address}.") 
     except Exception as e:
-        st.error(f"Failed to send confirmation email. Please check your internet connection or App Password/security settings: {e}")
+        # Fails silently in the main purchase flow, shows error to user instead of crashing
+        st.error(f"Failed to send confirmation email. Check email settings/App Password: {e}")
