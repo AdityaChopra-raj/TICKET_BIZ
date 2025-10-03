@@ -4,7 +4,7 @@ from pathlib import Path
 LEDGER_FILE = Path(__file__).parent / "ledger.csv"
 FIELDNAMES = [
     "event_id", "event_name", "first_name", "last_name", 
-    "email", "phone", "uid", "hash", "num_tickets", "checked_in" # Added new fields
+    "email", "phone", "uid", "hash", "num_tickets", "checked_in" 
 ]
 
 # Ensure ledger file exists and has headers
@@ -23,7 +23,7 @@ def get_ledger():
                 try:
                     # Type conversion and validation
                     row["num_tickets"] = int(row.get("num_tickets", 0))
-                    row["checked_in"] = int(row.get("checked_in", 0)) # New field
+                    row["checked_in"] = int(row.get("checked_in", 0))
                     
                     if not row.get("event_id") or row["num_tickets"] == 0:
                         continue
@@ -65,8 +65,7 @@ def get_tickets_sold(event_id):
 
 def update_checkin_status(uid, count):
     """
-    Updates the 'checked_in' count for a specific UID.
-    Reads all records, modifies the matching one, and rewrites the file.
+    Increments the 'checked_in' count for a specific UID to support partial check-in.
     """
     ledger = get_ledger()
     updated_ledger = []
@@ -74,7 +73,6 @@ def update_checkin_status(uid, count):
     found = False
     for row in ledger:
         if row.get("uid") == uid:
-            # Safely increment checked_in count
             row["checked_in"] = row.get("checked_in", 0) + count
             found = True
         updated_ledger.append(row)
