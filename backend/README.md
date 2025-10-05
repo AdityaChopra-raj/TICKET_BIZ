@@ -13,3 +13,4 @@ A Netflix-inspired dark theme Streamlit app:
 3. Run:
 ```bash
 streamlit run backend/app.py
+https://ticketbiz-vmerajymkvuqudodhta4za.streamlit.app/
